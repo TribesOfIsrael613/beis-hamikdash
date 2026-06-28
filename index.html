@@ -454,7 +454,7 @@
     function speak(text){ try{ if(!readAloud||!window.speechSynthesis)return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.rate=0.96; u.pitch=1.06; speechSynthesis.speak(u); }catch(e){} }
 
     const coins=[]; let coinCount=0;
-    for(const [cx,cz] of [[-10,80],[16,66],[-22,52],[18,46],[-6,40],[8,24],[0,6]]){ const grp=new THREE.Group(); const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,0.12,20),GOLD_B); disc.rotation.x=Math.PI/2; grp.add(disc); grp.position.set(cx,baseY+1.5,cz); grp.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(grp); coins.push({m:grp,halo:grp,got:false}); }
+    for(const [cx,cz] of [[-10,80],[16,66],[-22,52],[18,46],[-6,40],[8,24],[0,6],[0,196]]){ const grp=new THREE.Group(); const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,0.12,20),GOLD_B); disc.rotation.x=Math.PI/2; grp.add(disc); grp.position.set(cx,baseY+1.5,cz); grp.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(grp); coins.push({m:grp,halo:grp,got:false}); }
     function updateCoins(){ const el=document.getElementById('coins'); if(el) el.textContent='🪙 '+coinCount+' / '+coins.length; }
     updateCoins();
 
@@ -496,6 +496,26 @@
     const procession=[];
     for(let i=0;i<5;i++){ const g=person(13,64-i*2.6,baseY,{robe:ROBE_W,turban:ROBE_W,h:1.8,ry:Math.PI}); procession.push({g,off:i*2.6}); }
 
+    // ============ The Parah Adumah (Red Heifer) — Mount of Olives ============
+    function cow(x,z,y,ry){ const g=new THREE.Group(); const red=new THREE.MeshStandardMaterial({color:0x8a3a26,roughness:.85});
+      const body=new THREE.Mesh(new THREE.BoxGeometry(2.4,1.3,1.1),red); body.position.y=1.4; g.add(body);
+      const head=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.9,0.8),red); head.position.set(1.55,1.55,0); g.add(head);
+      const snout=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.5,0.6),new THREE.MeshStandardMaterial({color:0xb56a4a,roughness:.8})); snout.position.set(2.0,1.35,0); g.add(snout);
+      for(const [lx,lz] of [[-0.8,-0.4],[0.8,-0.4],[-0.8,0.4],[0.8,0.4]]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,1.4,8),red); leg.position.set(lx,0.7,lz); g.add(leg); }
+      for(const s of [-1,1]){ const horn=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.4,6),new THREE.MeshStandardMaterial({color:0xeee0c0})); horn.position.set(1.65,2.1,s*0.28); horn.rotation.z=-0.3; g.add(horn);
+        const ear=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.26,0.4),red); ear.position.set(1.35,1.85,s*0.5); g.add(ear); }
+      const tail=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.04,1.2,6),red); tail.position.set(-1.35,1.0,0); tail.rotation.z=0.4; g.add(tail);
+      g.position.set(x,y,z); g.rotation.y=ry||0; g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g); return g; }
+    box(24,1.0,20,0,baseY+0.4,201,stoneMat(24,20,0xc9b89a),{walk:true});            // plaza at the burning site
+    const PY=baseY+0.9;
+    cow(7,200,PY,-1.3);                                                              // the red heifer, facing the Temple
+    person(2,199,PY,{robe:ROBE_W,turban:ROBE_W,h:1.85,ry:-1.4});                     // the kohen
+    for(let i=0;i<5;i++){ box(2.4,0.34,0.4,-4,PY+0.18+i*0.32,203,WOOD,{noCast:true}); box(0.4,0.34,2.4,-4,PY+0.34+i*0.32,203,WOOD,{noCast:true}); } // cedar pyre, crosswise
+    const rhFire=new THREE.PointLight(0xff7a30,2.0,40,2); rhFire.position.set(-4,PY+2,203); scene.add(rhFire);
+    box(2.6,0.5,2.6,-4,PY+0.45,203,new THREE.MeshStandardMaterial({color:0x88421a,emissive:0xff5a14,emissiveIntensity:1.1}),{noCast:true});
+    const rhSign=new THREE.Mesh(new THREE.PlaneGeometry(5.4,2.0),new THREE.MeshBasicMaterial({map:plaqueTex(['The Red Heifer','Parah Adumah']),side:THREE.DoubleSide})); rhSign.position.set(-9,PY+2.6,196); rhSign.rotation.y=0.6; scene.add(rhSign); box(5.8,2.4,0.3,-9.3,PY+2.6,196.3,stoneMat(6,2,0xd8cdb0));
+    const waySign=new THREE.Mesh(new THREE.PlaneGeometry(6,1.6),new THREE.MeshBasicMaterial({map:plaqueTex(['→ Mount of Olives','& the Red Heifer']),side:THREE.DoubleSide})); waySign.position.set(7,baseY+3,100); waySign.rotation.y=Math.PI; scene.add(waySign); box(6.4,2,0.3,7,baseY+3,100.2,stoneMat(6,2,0xd8cdb0));
+
     // ============ stations ============
     const STATIONS=[
       {z:82,title:'1 · The Eastern Gate',body:'Shaar haMizrach — the gate of ascent. Yechezkel saw it shut: “This gate shall remain shut… for the L-rd has entered by it” (44:1–3).'},
@@ -507,6 +527,7 @@
       {z:4,title:'7 · The Holy of Holies',body:'The Kohen Gadol enters once a year before the Aron and its Keruvim, into the cloud of the Shechina (Vayikra 16). Beneath rests the Even haShesiyah (Yoma 54b).'},
       {z:12,title:'8 · The Chamber of Hewn Stone',body:'Lishkas haGazis — from here the Great Sanhedrin of seventy-one elders taught Torah and judged Israel, the source of law for the whole nation.',x:-30},
       {z:-6,title:'9 · A map of the worlds above',body:'The whole Temple is a diagram of the spiritual worlds: its length, breadth and height are chesed, gevurah and tiferes. You have walked a body of light.'},
+      {z:200,title:'★ The Red Heifer (Parah Adumah)',body:'Across the bridge to the Mount of Olives, a perfectly red cow — the Parah Adumah — was brought and burned. Its ashes were mixed with fresh spring water to make anyone who had touched something impure pure again — one of the Torah’s great mysteries (Bamidbar 19).'},
     ];
 
     // ============ audio (procedural) ============
