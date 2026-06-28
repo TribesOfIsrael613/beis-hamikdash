@@ -380,23 +380,38 @@
     solid(-9.5,-3.5,9,10.2); solid(3.5,9.5,9,10.2);                                                  // KHK partition sides
 
     const gates=[]; let quizGate=null, stars=0, winning=false;
-    function makeGate(z,hw,q){ const H = hw>12?9 : (z<12?5:7); const grp=new THREE.Group();
+    function makeGate(z,hw,qs){ const H = hw>12?9 : (z<12?5:7); const grp=new THREE.Group();
       const cur=new THREE.Mesh(new THREE.BoxGeometry(hw*2,H,0.4),new THREE.MeshStandardMaterial({color:0x39307e,emissive:0x2a2270,emissiveIntensity:.55,roughness:.7})); cur.position.y=baseY+H/2; grp.add(cur);
       const fr=new THREE.Mesh(new THREE.BoxGeometry(hw*2+1.4,0.7,0.7),GOLD_B); fr.position.y=baseY+H+0.2; grp.add(fr);
       const orb=new THREE.Mesh(new THREE.SphereGeometry(0.6,16,12),new THREE.MeshBasicMaterial({color:0xffdd66})); orb.position.set(0,baseY+H+1.5,0); grp.add(orb);
       grp.position.z=z; grp.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(grp);
       const cw=hw>12?40:hw; const col={x0:-cw,x1:cw,z0:z-0.6,z1:z+0.6}; colliders.push(col);
-      const g={z,hw,q,mesh:grp,H,col,solved:false,opening:false,openT:0}; gates.push(g); return g; }
-    makeGate(74,36,{t:'What is this special place?',o:['The Holy Temple 🏛️','A big castle 🏰','A zoo 🦁'],c:0,ex:'Yes! This is the Beis HaMikdash — G-d’s holy house in Jerusalem.'});
-    makeGate(57,36,{t:'What did the Levites do on these steps?',o:['Sang and played music 🎵','Cooked dinner 🍳','Took a nap 😴'],c:0,ex:'Right! Every day the Levites sang and played harps and trumpets.'});
-    makeGate(44,36,{t:'How did the kohanim go up to the altar?',o:['Up a gentle ramp ⛰️','On a tall ladder 🪜','In an elevator 🛗'],c:0,ex:'Correct! A ramp, never steps (Shemos 20:23).'});
-    makeGate(35,6.5,{t:'Which golden lamp lit up the Temple?',o:['The Menorah 🕎','A lightbulb 💡','The moon 🌙'],c:0,ex:'Yes! The golden Menorah with its seven branches.'});
-    makeGate(9.5,5,{t:'Who could enter the holiest room, once a year?',o:['The Kohen Gadol 👑','Anybody at all 🧑','A little puppy 🐶'],c:0,ex:'That’s it! Only the Kohen Gadol, on Yom Kippur (Vayikra 16).'});
+      const g={z,hw,qs,q:qs[0],mesh:grp,H,col,solved:false,opening:false,openT:0}; gates.push(g); return g; }
+    makeGate(74,36,[
+      {t:'What is this special place?',o:['The Holy Temple 🏛️','A big castle 🏰','A zoo 🦁'],c:0,ex:'Yes! This is the Beis HaMikdash — Hashem’s holy house.'},
+      {t:'What city is the Holy Temple in?',o:['Jerusalem 🌇','The North Pole ❄️','The moon 🌙'],c:0,ex:'Right! The Temple stands in Yerushalayim, Jerusalem.'},
+      {t:'The Temple was a special house for whom?',o:['For Hashem 🙏','For a giant 🦖','For toys 🧸'],c:0,ex:'Yes — a house where Hashem’s presence rested among the people.'}]);
+    makeGate(57,36,[
+      {t:'What did the Levites do on these steps?',o:['Sang and played music 🎵','Cooked dinner 🍳','Took a nap 😴'],c:0,ex:'Right! Every day the Levites sang the song of the day.'},
+      {t:'What did the Levites use to make music?',o:['Harps and trumpets 🎺','A telephone 📱','A drum set 🥁'],c:0,ex:'Yes — nevel, kinnor and chatzotzros (harps, lyres, trumpets).'},
+      {t:'How many steps led up to the Nicanor Gate?',o:['Fifteen 🔢','Just two','A thousand'],c:0,ex:'Fifteen semicircular steps — one for each Shir haMaalos!'}]);
+    makeGate(44,36,[
+      {t:'How did the kohanim go up to the altar?',o:['Up a gentle ramp ⛰️','On a tall ladder 🪜','In an elevator 🛗'],c:0,ex:'Correct! A ramp, never steps (Shemos 20:23).'},
+      {t:'What burned on the altar all the time?',o:['A holy fire 🔥','Cold ice 🧊','Just water 💧'],c:0,ex:'Yes — a fire that was never allowed to go out (Vayikra 6:6).'},
+      {t:'What did people bring to the altar?',o:['Offerings (korbanos) 🐑','Pizza 🍕','Homework 📚'],c:0,ex:'Right — korbanos, offerings to come close to Hashem.'}]);
+    makeGate(35,6.5,[
+      {t:'Which golden lamp lit up the Temple?',o:['The Menorah 🕎','A lightbulb 💡','The moon 🌙'],c:0,ex:'Yes! The golden Menorah with its seven branches.'},
+      {t:'How many branches did the Menorah have?',o:['Seven ✨','Only two','Twenty'],c:0,ex:'Seven branches of pure gold (Shemos 25).'},
+      {t:'What special bread sat on the golden Table?',o:['The showbread 🍞','A birthday cake 🎂','Pretzels 🥨'],c:0,ex:'The lechem hapanim — twelve loaves, fresh every week.'}]);
+    makeGate(9.5,5,[
+      {t:'Who could enter the holiest room, once a year?',o:['The Kohen Gadol 👑','Anybody at all 🧑','A little puppy 🐶'],c:0,ex:'Only the Kohen Gadol, on Yom Kippur (Vayikra 16).'},
+      {t:'On which special day did he enter?',o:['Yom Kippur 🕊️','His birthday 🎈','Every Tuesday'],c:0,ex:'Yes — only on Yom Kippur, the holiest day of the year.'},
+      {t:'What was kept in the Holy of Holies?',o:['The Aron (Ark) 📦','A television 📺','A racecar 🏎️'],c:0,ex:'The Aron — the Ark with the luchos — and the Keruvim above it.'}]);
 
     const quizEl=document.getElementById('quiz'),qText=document.getElementById('q-text'),qOpts=document.getElementById('q-opts'),qFeed=document.getElementById('q-feed'),qRoom=document.getElementById('q-room');
     function updateStars(){ document.getElementById('count').textContent='⭐ '+stars+' / '+gates.length; }
     updateStars();
-    function showQuiz(g){ qRoom.textContent='🔒  Answer to open the gate'; qText.textContent=g.q.t; qFeed.textContent=''; qOpts.innerHTML='';
+    function showQuiz(g){ g.q=g.qs[Math.floor(Math.random()*g.qs.length)]; qRoom.textContent='🔒  Answer to open the gate'; qText.textContent=g.q.t; qFeed.textContent=''; qOpts.innerHTML='';
       const opts=shuffle(g.q.o.map((text,idx)=>({text,ok:idx===g.q.c})));
       opts.forEach(o=>{ const b=document.createElement('button'); b.className='qbtn'; b.textContent=o.text; b.onclick=()=>answer(g,o.ok,b); qOpts.appendChild(b); }); speak(g.q.t+'. '+opts.map(o=>o.text).join('. ')); quizEl.style.display='flex'; }
     function answer(g,ok,btn){ if(ok){ g.solved=true; const k=colliders.indexOf(g.col); if(k>=0)colliders.splice(k,1); g.opening=true; stars++; updateStars(); chime(true); speak('Correct! '+g.q.ex);
@@ -450,6 +465,10 @@
     const confColors=[0xffd24a,0xe24b4a,0x46a0d8,0x5cc060,0xf2cf66,0xb648b6]; const confetti=[]; let confettiT=0;
     for(let i=0;i<60;i++){ const m=new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.3), new THREE.MeshBasicMaterial({color:confColors[i%confColors.length],side:THREE.DoubleSide})); m.visible=false; scene.add(m); confetti.push({m,vx:0,vy:0,vz:0}); }
     function burstConfetti(){ confettiT=4.5; for(const c of confetti){ c.m.visible=true; c.m.position.set(player.position.x+(Math.random()-0.5)*2, player.position.y+2.5, player.position.z+(Math.random()-0.5)*2); c.vx=(Math.random()-0.5)*7; c.vy=4+Math.random()*5; c.vz=(Math.random()-0.5)*7; } }
+
+    // a procession of kohanim walking the court
+    const procession=[];
+    for(let i=0;i<5;i++){ const g=person(13,64-i*2.6,baseY,{robe:ROBE_W,turban:ROBE_W,h:1.8,ry:Math.PI}); procession.push({g,off:i*2.6}); }
 
     // ============ stations ============
     const STATIONS=[
@@ -540,6 +559,7 @@
       for(const c of coins) if(!c.got) c.m.rotation.y+=dt*2.2;
       { let ng=null,nd=1e9; for(const gt of gates){ if(!gt.solved){ const d=Math.abs(player.position.z-gt.z); if(d<nd){nd=d;ng=gt;} } } if(ng){ guideArrow.visible=true; guideArrow.position.set(0,baseY+ng.H+3.5+Math.sin(now*3)*0.4,ng.z); } else guideArrow.visible=false; }
       for(const fl of flames) fl.scale.y=1+Math.sin(now*12+fl.position.x*3)*0.2;
+      for(const p of procession){ p.g.position.z-=dt*1.3; p.g.position.y=baseY+Math.abs(Math.sin(now*4+p.off))*0.05; if(p.g.position.z<46)p.g.position.z=66; }
       if(confettiT>0){ confettiT-=dt; for(const c of confetti){ c.vy-=15*dt; c.m.position.x+=c.vx*dt; c.m.position.y+=c.vy*dt; c.m.position.z+=c.vz*dt; c.m.rotation.x+=dt*6; c.m.rotation.y+=dt*5; if(confettiT<=0)c.m.visible=false; } }
       renderer.render(scene,camera);
     }
