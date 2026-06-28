@@ -44,6 +44,11 @@
   #overlay .how{ margin:6px 0 22px; display:flex; flex-direction:column; gap:9px; font-size:16px; opacity:.94; text-align:left; max-width:380px; }
   #overlay .how div{ background:rgba(255,255,255,.06); border:1px solid rgba(234,185,63,.25); border-radius:10px; padding:9px 14px; }
   #overlay .how b{ color:var(--gold); font-weight:600; }
+  #overlay .modes{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  #overlay .modebtn{ font:inherit; font-size:18px; font-weight:600; color:#3a2a08; background:var(--gold); border:none; border-radius:14px; padding:14px 22px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  #overlay .modebtn span{ font-size:12px; font-weight:400; opacity:.8; }
+  #overlay .modebtn:hover{ filter:brightness(1.07); }
+  #quiz .qinput{ font:inherit; font-size:19px; padding:14px; border-radius:14px; border:2px solid #e3d6ad; width:100%; text-align:center; }
 </style>
 </head>
 <body>
@@ -62,7 +67,11 @@
       <div>🪙 Collect the <b>golden coins</b> as you explore</div>
       <div>👑 Reach the <b>Holy of Holies</b> to win!</div>
     </div>
-    <div class="cta">Click to begin</div>
+    <div class="modes">
+      <button class="modebtn" id="m-young">🧒 Ages 3–6<span>read aloud · tap the answer</span></button>
+      <button class="modebtn" id="m-old">🧑 Ages 7+<span>type your own answer</span></button>
+    </div>
+    <p class="keys" style="margin-top:14px">…or click anywhere to start</p>
   </div>
 
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
@@ -379,7 +388,7 @@
     solid(-37,-11,83,85); solid(11,37,83,85);
     solid(-9.5,-3.5,9,10.2); solid(3.5,9.5,9,10.2);                                                  // KHK partition sides
 
-    const gates=[]; let quizGate=null, stars=0, winning=false;
+    const gates=[]; let quizGate=null, stars=0, winning=false, mode='younger';
     function makeGate(z,hw,qs){ const H = hw>12?9 : (z<12?5:7); const grp=new THREE.Group();
       const cur=new THREE.Mesh(new THREE.BoxGeometry(hw*2,H,0.4),new THREE.MeshStandardMaterial({color:0x39307e,emissive:0x2a2270,emissiveIntensity:.55,roughness:.7})); cur.position.y=baseY+H/2; grp.add(cur);
       const fr=new THREE.Mesh(new THREE.BoxGeometry(hw*2+1.4,0.7,0.7),GOLD_B); fr.position.y=baseY+H+0.2; grp.add(fr);
@@ -412,8 +421,16 @@
     function updateStars(){ document.getElementById('count').textContent='⭐ '+stars+' / '+gates.length; }
     updateStars();
     function showQuiz(g){ g.q=g.qs[Math.floor(Math.random()*g.qs.length)]; qRoom.textContent='🔒  Answer to open the gate'; qText.textContent=g.q.t; qFeed.textContent=''; qOpts.innerHTML='';
-      const opts=shuffle(g.q.o.map((text,idx)=>({text,ok:idx===g.q.c})));
-      opts.forEach(o=>{ const b=document.createElement('button'); b.className='qbtn'; b.textContent=o.text; b.onclick=()=>answer(g,o.ok,b); qOpts.appendChild(b); }); speak(g.q.t+'. '+opts.map(o=>o.text).join('. ')); quizEl.style.display='flex'; }
+      if(mode==='older'){
+        const inp=document.createElement('input'); inp.className='qinput'; inp.type='text'; inp.placeholder='Type your answer…'; inp.autocomplete='off';
+        const sub=document.createElement('button'); sub.className='qbtn cont'; sub.textContent='Check ✓';
+        const go=()=>answer(g, checkType(inp.value, g.q.o[g.q.c]), null);
+        sub.onclick=go; inp.addEventListener('keydown',e=>{ if(e.code==='Enter') go(); });
+        qOpts.appendChild(inp); qOpts.appendChild(sub); quizEl.style.display='flex'; setTimeout(()=>inp.focus(),60);
+      } else {
+        const opts=shuffle(g.q.o.map((text,idx)=>({text,ok:idx===g.q.c})));
+        opts.forEach(o=>{ const b=document.createElement('button'); b.className='qbtn'; b.textContent=o.text; b.onclick=()=>answer(g,o.ok,b); qOpts.appendChild(b); }); speak(g.q.t+'. '+opts.map(o=>o.text).join('. ')); quizEl.style.display='flex';
+      } }
     function answer(g,ok,btn){ if(ok){ g.solved=true; const k=colliders.indexOf(g.col); if(k>=0)colliders.splice(k,1); g.opening=true; stars++; updateStars(); chime(true); speak('Correct! '+g.q.ex);
         qFeed.textContent='🎉  '+g.q.ex; qOpts.innerHTML=''; const cont=document.createElement('button'); cont.className='qbtn cont'; cont.textContent=(stars>=gates.length)?'🎉 You did it! Go inside →':'Continue →';
         cont.onclick=()=>{ quizEl.style.display='none'; const won=stars>=gates.length; quizGate=null; controls.lock(); if(won) setTimeout(winShow,500); }; qOpts.appendChild(cont); }
@@ -450,6 +467,7 @@
 
     // ============ MORE 2: shuffle, corner chambers, guide arrow, footsteps ============
     function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+    function checkType(typed,correct){ const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' '); const t=norm(typed).trim(); if(!t)return false; const words=norm(correct).split(/\s+/).filter(w=>w.length>=3 && !['the','and','for','was','your'].includes(w)); return words.some(w=>t.includes(w)); }
     function cornerChamber(x,z,label){ const sx=x>0?1:-1;
       box(11,7,0.8,x,baseY+3.5,z+5.5,stoneMat(11,7)); box(0.8,7,12,x+sx*5.5,baseY+3.5,z,stoneMat(12,7)); box(11,0.6,12,x,baseY+7,z,stoneMat(11,12),{noCast:true});
       const sign=new THREE.Mesh(new THREE.PlaneGeometry(4.2,1.5),new THREE.MeshBasicMaterial({map:plaqueTex([label])})); sign.position.set(x,baseY+5,z-5.9); scene.add(sign); box(4.6,1.9,0.3,x,baseY+5,z-6.1,stoneMat(5,2,0xd8cdb0)); }
@@ -505,9 +523,13 @@
     overlay.addEventListener('click',()=>controls.lock());
     controls.addEventListener('lock',()=>{ overlay.style.display='none'; startAudio(); });
     controls.addEventListener('unlock',()=>{ if(quizGate||winning) return; overlay.style.display='flex'; });
+    const beginGame=(m)=>{ mode=m; readAloud=(m==='younger'); controls.lock(); };
+    { const my=document.getElementById('m-young'), mo=document.getElementById('m-old');
+      if(my) my.onclick=(e)=>{ e.stopPropagation(); beginGame('younger'); };
+      if(mo) mo.onclick=(e)=>{ e.stopPropagation(); beginGame('older'); }; }
     const move={f:false,b:false,l:false,r:false};
     let tour=false,tourIdx=0,tourWait=0;
-    const set=(e,v)=>{ const k=e.code; if(k==='KeyW'||k==='ArrowUp')move.f=v; else if(k==='KeyS'||k==='ArrowDown')move.b=v; else if(k==='KeyA'||k==='ArrowLeft')move.l=v; else if(k==='KeyD'||k==='ArrowRight')move.r=v; else if(k==='KeyM'&&v)toggleMute(); else if(k==='KeyV'&&v)readAloud=!readAloud; else if(k==='KeyT'&&v){ tour=!tour; tourWait=0; } };
+    const set=(e,v)=>{ if(e.target&&e.target.tagName==='INPUT')return; const k=e.code; if(k==='KeyW'||k==='ArrowUp')move.f=v; else if(k==='KeyS'||k==='ArrowDown')move.b=v; else if(k==='KeyA'||k==='ArrowLeft')move.l=v; else if(k==='KeyD'||k==='ArrowRight')move.r=v; else if(k==='KeyM'&&v)toggleMute(); else if(k==='KeyV'&&v)readAloud=!readAloud; else if(k==='KeyT'&&v){ tour=!tour; tourWait=0; } };
     addEventListener('keydown',e=>set(e,true)); addEventListener('keyup',e=>set(e,false));
     addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
