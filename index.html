@@ -406,7 +406,7 @@
     function winShow(){ winning=true; document.getElementById('done-body').textContent='🏆 You are a Temple Explorer! You earned ⭐ '+stars+'/'+gates.length+' and found 🪙 '+coinCount+'/'+coins.length+' coins — and learned your way into the Holy of Holies. Amazing!'; const bt=document.getElementById('done-btns'); bt.innerHTML='';
       const again=document.createElement('button'); again.className='qbtn cont'; again.textContent='Play again 🔁'; again.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; resetGame(); controls.lock(); };
       const keep=document.createElement('button'); keep.className='qbtn'; keep.textContent='Keep exploring 🚶'; keep.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; controls.lock(); };
-      bt.appendChild(again); bt.appendChild(keep); document.getElementById('done').style.display='flex'; speak('Mazel tov! You did it!'); controls.unlock(); }
+      bt.appendChild(again); bt.appendChild(keep); document.getElementById('done').style.display='flex'; speak('Mazel tov! You did it!'); burstConfetti(); controls.unlock(); }
     function chime(ok){ if(!audio)return; try{ const t=audio.ctx.currentTime, ns=ok?[523,659,784]:[300,235]; ns.forEach((f,k)=>{ const o=audio.ctx.createOscillator(); o.type='sine'; o.frequency.value=f; const gg=audio.ctx.createGain(); gg.gain.setValueAtTime(0,t+k*0.11); gg.gain.linearRampToValueAtTime(0.22,t+k*0.11+0.03); gg.gain.linearRampToValueAtTime(0,t+k*0.11+0.32); o.connect(gg).connect(audio.master); o.start(t+k*0.11); o.stop(t+k*0.11+0.36); }); }catch(e){} }
 
     // ============ MORE: read-aloud, coins, river, stars/night, replay ============
@@ -445,6 +445,11 @@
     let stepT=0;
     function footstep(){ if(!audio||audio.muted)return; try{ const c=audio.ctx, bl=Math.floor(c.sampleRate*0.08), buf=c.createBuffer(1,bl,c.sampleRate), d=buf.getChannelData(0);
       for(let i=0;i<bl;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/bl,3); const s=c.createBufferSource(); s.buffer=buf; const f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=520; const g=c.createGain(); g.gain.value=0.16; s.connect(f).connect(g).connect(audio.master); s.start(); }catch(e){} }
+
+    // confetti burst (celebration)
+    const confColors=[0xffd24a,0xe24b4a,0x46a0d8,0x5cc060,0xf2cf66,0xb648b6]; const confetti=[]; let confettiT=0;
+    for(let i=0;i<60;i++){ const m=new THREE.Mesh(new THREE.PlaneGeometry(0.3,0.3), new THREE.MeshBasicMaterial({color:confColors[i%confColors.length],side:THREE.DoubleSide})); m.visible=false; scene.add(m); confetti.push({m,vx:0,vy:0,vz:0}); }
+    function burstConfetti(){ confettiT=4.5; for(const c of confetti){ c.m.visible=true; c.m.position.set(player.position.x+(Math.random()-0.5)*2, player.position.y+2.5, player.position.z+(Math.random()-0.5)*2); c.vx=(Math.random()-0.5)*7; c.vy=4+Math.random()*5; c.vz=(Math.random()-0.5)*7; } }
 
     // ============ stations ============
     const STATIONS=[
@@ -535,6 +540,7 @@
       for(const c of coins) if(!c.got) c.m.rotation.y+=dt*2.2;
       { let ng=null,nd=1e9; for(const gt of gates){ if(!gt.solved){ const d=Math.abs(player.position.z-gt.z); if(d<nd){nd=d;ng=gt;} } } if(ng){ guideArrow.visible=true; guideArrow.position.set(0,baseY+ng.H+3.5+Math.sin(now*3)*0.4,ng.z); } else guideArrow.visible=false; }
       for(const fl of flames) fl.scale.y=1+Math.sin(now*12+fl.position.x*3)*0.2;
+      if(confettiT>0){ confettiT-=dt; for(const c of confetti){ c.vy-=15*dt; c.m.position.x+=c.vx*dt; c.m.position.y+=c.vy*dt; c.m.position.z+=c.vz*dt; c.m.rotation.x+=dt*6; c.m.rotation.y+=dt*5; if(confettiT<=0)c.m.visible=false; } }
       renderer.render(scene,camera);
     }
     animate();
