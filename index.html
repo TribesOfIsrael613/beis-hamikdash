@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Beis HaMikdash — walk the Holy Temple</title>
+<style>
+  :root{ --gold:#eab93f; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; overflow:hidden; background:#0d0c0a;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; color:#f4eede; }
+  canvas{ display:block; }
+  #overlay{ position:fixed; inset:0; z-index:20; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; cursor:pointer;
+    background:radial-gradient(ellipse at center, rgba(20,17,12,.32), rgba(8,7,5,.82)); }
+  #overlay h1{ font-weight:500; font-size:36px; letter-spacing:.02em; margin:0 0 .12em; }
+  #overlay .sub{ font-style:italic; opacity:.85; margin:0 0 1.6em; font-size:17px; }
+  #overlay .cta{ border:1px solid var(--gold); color:var(--gold); border-radius:999px; padding:12px 28px; font-size:15px; }
+  #overlay .keys{ margin-top:1.5em; opacity:.6; font-size:13px; }
+  #hud{ position:fixed; top:14px; left:16px; z-index:10; font-size:13px; opacity:.85; text-shadow:0 1px 3px rgba(0,0,0,.85); }
+  #hud .count{ color:var(--gold); }
+  #crosshair{ position:fixed; left:50%; top:50%; width:5px; height:5px; margin:-2.5px 0 0 -2.5px;
+    border-radius:50%; background:rgba(255,255,255,.55); z-index:10; pointer-events:none; }
+  #panel{ position:fixed; left:50%; bottom:7%; transform:translateX(-50%); z-index:10;
+    width:min(640px,86vw); display:none; background:rgba(20,17,12,.92);
+    border:1px solid rgba(234,185,63,.55); border-radius:14px; padding:18px 22px; box-shadow:0 12px 44px rgba(0,0,0,.55); }
+  #panel h2{ margin:0 0 .35em; font-weight:500; font-size:19px; color:var(--gold); }
+  #panel p{ margin:0; font-size:15.5px; line-height:1.6; color:#efe7d6; }
+  #done{ position:fixed; inset:0; z-index:15; display:none; align-items:center; justify-content:center; text-align:center; background:rgba(8,7,5,.72); }
+  #done div{ max-width:540px; padding:0 24px; }
+  #done h2{ color:var(--gold); font-weight:500; font-size:26px; }
+  #quiz{ position:fixed; inset:0; z-index:30; display:none; align-items:center; justify-content:center; background:rgba(10,9,7,.55); }
+  #quiz .qbox{ width:min(560px,92vw); background:#fffdf6; color:#2b2519; border-radius:24px; padding:26px 26px 30px; box-shadow:0 22px 64px rgba(0,0,0,.5); text-align:center; border:3px solid var(--gold); }
+  #quiz #q-room{ font-size:14px; color:#9a7a1e; font-weight:600; margin-bottom:8px; }
+  #quiz #q-text{ font-size:24px; font-weight:600; line-height:1.3; margin-bottom:18px; color:#2b2519; }
+  #quiz #q-opts{ display:flex; flex-direction:column; gap:12px; }
+  #quiz .qbtn{ font:inherit; font-size:19px; padding:16px; border-radius:14px; border:2px solid #e3d6ad; background:#fbf3dc; color:#3a2f17; cursor:pointer; transition:transform .08s, background .15s; }
+  #quiz .qbtn:hover{ background:#f3e6bf; transform:translateY(-2px); }
+  #quiz .qbtn.cont{ background:#e9b84a; border-color:#caa02f; color:#3a2a08; font-weight:600; }
+  #quiz #q-feed{ margin-top:16px; font-size:18px; min-height:24px; color:#1f7a3a; font-weight:600; }
+  #done-btns{ display:flex; gap:12px; justify-content:center; margin-top:22px; flex-wrap:wrap; }
+  #done .qbtn{ font:inherit; font-size:18px; padding:14px 20px; border-radius:14px; border:2px solid #e3d6ad; background:#fbf3dc; color:#3a2f17; cursor:pointer; }
+  #done .qbtn.cont{ background:#e9b84a; border-color:#caa02f; color:#3a2a08; font-weight:600; }
+  #overlay .how{ margin:6px 0 22px; display:flex; flex-direction:column; gap:9px; font-size:16px; opacity:.94; text-align:left; max-width:380px; }
+  #overlay .how div{ background:rgba(255,255,255,.06); border:1px solid rgba(234,185,63,.25); border-radius:10px; padding:9px 14px; }
+  #overlay .how b{ color:var(--gold); font-weight:600; }
+</style>
+</head>
+<body>
+  <div id="hud">The Beis HaMikdash · <span class="count" id="count">⭐ 0 / 5</span> · <span id="coins">🪙 0</span> · <span id="snd">♪ M</span></div>
+  <div id="crosshair"></div>
+  <div id="panel"><h2 id="p-title"></h2><p id="p-body"></p></div>
+  <div id="done"><div><h2>🎉 Mazel tov!</h2><p id="done-body"></p><div id="done-btns"></div></div></div>
+  <div id="quiz"><div class="qbox"><div id="q-room"></div><div id="q-text"></div><div id="q-opts"></div><div id="q-feed"></div></div></div>
+  <div id="overlay">
+    <h1>The Beis HaMikdash</h1>
+    <p class="sub">A learning adventure — find your way into the Holy Temple!</p>
+    <div class="how">
+      <div>🚶 Walk with <b>W A S D</b> or the <b>arrow keys</b></div>
+      <div>👀 Look around with your <b>mouse</b></div>
+      <div>🚪 Answer the question at each <b>glowing gate</b> to open it</div>
+      <div>🪙 Collect the <b>golden coins</b> as you explore</div>
+      <div>👑 Reach the <b>Holy of Holies</b> to win!</div>
+    </div>
+    <div class="cta">Click to begin</div>
+  </div>
+
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { PointerLockControls } from './vendor/PointerLockControls.js';
+
+    // ============ renderer / scene ============
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 2000);
+
+    // ============ procedural textures ============
+    function ashlar(base, mortar){ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
+      x.fillStyle=base; x.fillRect(0,0,512,512);
+      for(let i=0;i<9000;i++){ const v=Math.random(); x.fillStyle=`rgba(${120+v*120|0},${108+v*110|0},${82+v*95|0},0.06)`; x.fillRect(Math.random()*512,Math.random()*512,3,2); }
+      x.strokeStyle=mortar; x.lineWidth=3; const rh=56;
+      for(let r=0;r*rh<=512;r++){ const y=r*rh; x.beginPath(); x.moveTo(0,y); x.lineTo(512,y); x.stroke(); const off=(r%2)*70; for(let cx=off;cx<=512;cx+=140){ x.beginPath(); x.moveTo(cx,y); x.lineTo(cx,y+rh); x.stroke(); } }
+      const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
+    function marble(){ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
+      x.fillStyle='#ece5d2'; x.fillRect(0,0,512,512);
+      for(let v=0;v<30;v++){ x.strokeStyle=`rgba(150,140,118,${0.05+Math.random()*0.12})`; x.lineWidth=1+Math.random()*2; x.beginPath(); let yy=Math.random()*512; x.moveTo(0,yy); for(let xx=0;xx<=512;xx+=28){ yy+=(Math.random()-0.5)*42; x.lineTo(xx,yy); } x.stroke(); }
+      x.strokeStyle='rgba(120,108,86,0.5)'; x.lineWidth=2; for(let g=0;g<=512;g+=128){ x.beginPath(); x.moveTo(g,0); x.lineTo(g,512); x.moveTo(0,g); x.lineTo(512,g); x.stroke(); }
+      const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
+    function goldTexture(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
+      const g=x.createLinearGradient(0,0,128,128); g.addColorStop(0,'#caa23a'); g.addColorStop(0.5,'#f4d273'); g.addColorStop(1,'#b88a2c'); x.fillStyle=g; x.fillRect(0,0,128,128);
+      for(let i=0;i<1800;i++){ x.fillStyle=`rgba(255,242,205,${Math.random()*0.06})`; x.fillRect(Math.random()*128,Math.random()*128,6,1); }
+      const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
+    function waterTex(){ const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d'); x.fillStyle='#3f7fa8'; x.fillRect(0,0,64,64);
+      for(let i=0;i<46;i++){ x.strokeStyle=`rgba(205,232,246,${Math.random()*0.4})`; x.beginPath(); const yy=Math.random()*64; x.moveTo(0,yy); x.lineTo(64,yy+(Math.random()-0.5)*8); x.stroke(); }
+      const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
+    function plaqueTex(lines){ const c=document.createElement('canvas'); c.width=512; c.height=256; const x=c.getContext('2d');
+      x.fillStyle='#d7ccae'; x.fillRect(0,0,512,256); x.strokeStyle='#9a8a64'; x.lineWidth=6; x.strokeRect(8,8,496,240);
+      x.fillStyle='#352b18'; x.font='600 26px Georgia'; x.textAlign='center'; lines.forEach((ln,i)=>x.fillText(ln,256,56+i*40));
+      const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
+
+    const STONE=ashlar('#ece3cd','rgba(120,104,76,0.55)'), MARBLE=marble(), GTEX=goldTexture(), WTEX=waterTex();
+    function stoneMat(w,h,tint){ const t=STONE.clone(); t.needsUpdate=true; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(Math.max(1,w/3.2),Math.max(1,h/3.2)); return new THREE.MeshStandardMaterial({ map:t, color:tint||0xffffff, roughness:.93, metalness:0 }); }
+
+    // ============ materials ============
+    const GOLD   = new THREE.MeshStandardMaterial({ map:GTEX, color:0xfff0d2, metalness:.95, roughness:.34, emissive:0x5a3a08, emissiveIntensity:.34 });
+    const GOLD_B = new THREE.MeshStandardMaterial({ map:GTEX, color:0xfff4dc, metalness:1,   roughness:.24, emissive:0x7d540f, emissiveIntensity:.55 });
+    const bronze = new THREE.MeshStandardMaterial({ color:0x9a6f34, metalness:.88, roughness:.4 });
+    const DARK   = new THREE.MeshStandardMaterial({ color:0x0d0a06, roughness:1 });
+    const CURTAIN= new THREE.MeshStandardMaterial({ color:0x6b1f2c, roughness:.7, emissive:0x230709, emissiveIntensity:.5 });
+    const MARBLE_M = new THREE.MeshStandardMaterial({ map:MARBLE, color:0xf3eede, roughness:.5, metalness:0 });
+    const SKIN=new THREE.MeshStandardMaterial({color:0xcaa078,roughness:.85}), HAIR=new THREE.MeshStandardMaterial({color:0x3a2a1c,roughness:.95});
+    const ROBE_W=new THREE.MeshStandardMaterial({color:0xf3efe2,roughness:.9}), ROBE_BL=new THREE.MeshStandardMaterial({color:0x2c3f86,roughness:.7}), ROBE_LV=new THREE.MeshStandardMaterial({color:0xe8e2cf,roughness:.85});
+    const WOOD=new THREE.MeshStandardMaterial({color:0x7a4a22,roughness:.6,metalness:.15});
+    const GEMS=[0xb23a3a,0x2f9e54,0xe6c12e,0x3a78c8,0xb648b6,0xe08a2a,0x46a0d8,0xd45a5a,0x5cc060,0xc89a32,0x6f7fd8,0x9ec23a];
+
+    // ============ sky / fog / lights (refs kept for the day cycle) ============
+    const skyMat = (()=>{ const c=document.createElement('canvas'); c.width=16; c.height=256; const ctx=c.getContext('2d'); const g=ctx.createLinearGradient(0,0,0,256);
+      g.addColorStop(0,'#23406c'); g.addColorStop(0.45,'#7d8aa2'); g.addColorStop(0.72,'#efc488'); g.addColorStop(1,'#f9e6bb'); ctx.fillStyle=g; ctx.fillRect(0,0,16,256);
+      const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; const m=new THREE.MeshBasicMaterial({map:t,side:THREE.BackSide,fog:false}); scene.add(new THREE.Mesh(new THREE.SphereGeometry(740,32,16),m)); return m; })();
+    scene.fog = new THREE.Fog(0xe9d6b0, 95, 560);
+    // gold reflections — image-based lighting from a tiny sky environment
+    try{ const pmrem=new THREE.PMREMGenerator(renderer); const es=new THREE.Scene();
+      es.add(new THREE.Mesh(new THREE.SphereGeometry(50,16,12), new THREE.MeshBasicMaterial({color:0xa8c0de,side:THREE.BackSide})));
+      const sgnd=new THREE.Mesh(new THREE.SphereGeometry(50,16,8,0,Math.PI*2,Math.PI*0.55,Math.PI*0.45), new THREE.MeshBasicMaterial({color:0x6b5a3a,side:THREE.BackSide})); es.add(sgnd);
+      const ssun=new THREE.Mesh(new THREE.SphereGeometry(7,12,12), new THREE.MeshBasicMaterial({color:0xfff2d0})); ssun.position.set(22,26,16); es.add(ssun);
+      scene.environment=pmrem.fromScene(es,0.05).texture; pmrem.dispose();
+    }catch(e){ console.warn('env map unavailable',e); }
+    const hemi=new THREE.HemisphereLight(0xc2d4ff,0x6f5d3c,0.5); scene.add(hemi);
+    const amb=new THREE.AmbientLight(0x3a3326,0.5); scene.add(amb);
+    const sun=new THREE.DirectionalLight(0xffdfa0,2.2); sun.position.set(75,100,140); sun.castShadow=true;
+    sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.near=1; sun.shadow.camera.far=420;
+    sun.shadow.camera.left=-80; sun.shadow.camera.right=80; sun.shadow.camera.top=110; sun.shadow.camera.bottom=-60; sun.shadow.bias=-0.0003; sun.shadow.camera.updateProjectionMatrix();
+    sun.target.position.set(0,12,18); scene.add(sun); scene.add(sun.target);
+
+    // ============ helpers ============
+    const walkable=[]; const colliders=[]; const flames=[];
+    function box(w,h,d,x,y,z,mat,opts={}){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat||stoneMat(Math.max(w,d),h)); m.position.set(x,y,z); m.castShadow=opts.noCast?false:true; m.receiveShadow=true; scene.add(m); if(opts.walk) walkable.push(m); return m; }
+    function merlons(z,y,x0,x1,mat){ for(let x=x0;x<=x1;x+=2.4){ const b=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.4,1.2),mat); b.position.set(x,y+0.7,z); b.castShadow=true; scene.add(b); } }
+    function rosette(x,y,z){ const r=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.16,10,18),GOLD_B); r.position.set(x,y,z); const c=new THREE.Mesh(new THREE.SphereGeometry(0.22,12,10),GOLD); c.position.set(x,y,z); r.castShadow=true; scene.add(r,c); }
+    const baseY=1.4;
+
+    // ============ ground + platform (marble) ============
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700), (()=>{ const t=MARBLE.clone(); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(50,50); return new THREE.MeshStandardMaterial({map:t,roughness:.7}); })());
+    ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground); walkable.push(ground);
+    const platform=new THREE.Mesh(new THREE.BoxGeometry(126,1.4,140), MARBLE_M); platform.position.set(0,0.7,14); platform.receiveShadow=true; platform.castShadow=true; scene.add(platform); walkable.push(platform);
+    for(let i=0;i<4;i++){ box(126-i*6,0.5,4,0,0.25,84-i*2.2,MARBLE_M,{walk:true,noCast:true}); }
+
+    // ============ colonnade ============
+    function column(x,z,h){ const g=new THREE.Group();
+      const base=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.25,0.8,22),MARBLE_M); base.position.y=0.4;
+      const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.66,0.82,h,28),MARBLE_M); shaft.position.y=0.8+h/2;
+      const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.66,0.4,22),GOLD); neck.position.y=0.8+h+0.2;
+      const cap=new THREE.Mesh(new THREE.CylinderGeometry(1.25,0.72,1.0,22),GOLD_B); cap.position.y=0.8+h+0.9;
+      const abac=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.4,2.4),MARBLE_M); abac.position.y=0.8+h+1.6;
+      [base,shaft,neck,cap,abac].forEach(m=>{m.castShadow=m.receiveShadow=true; g.add(m);}); g.position.set(x,baseY,z); scene.add(g); }
+    for(let z=42;z<=80;z+=6.5){ column(-19,z,16); column(19,z,16); column(-30,z,14); column(30,z,14); }
+
+    // ============ sanctuary body ============
+    const BODY_H=33, FRONT_Z=33, REAR_Z=-8, HW=9;
+    box(HW*2+3,BODY_H,1.2,0,baseY+BODY_H/2,REAR_Z,stoneMat(HW*2,BODY_H));
+    box(1.4,BODY_H,FRONT_Z-REAR_Z,-HW-0.7,baseY+BODY_H/2,(FRONT_Z+REAR_Z)/2,stoneMat(FRONT_Z-REAR_Z,BODY_H));
+    box(1.4,BODY_H,FRONT_Z-REAR_Z,HW+0.7,baseY+BODY_H/2,(FRONT_Z+REAR_Z)/2,stoneMat(FRONT_Z-REAR_Z,BODY_H));
+    box(5,BODY_H,1.0,-6.5,baseY+BODY_H/2,9.5,stoneMat(5,BODY_H)); box(5,BODY_H,1.0,6.5,baseY+BODY_H/2,9.5,stoneMat(5,BODY_H));
+    box(HW*2,26,0.3,0,baseY+13,REAR_Z+0.8,GOLD,{noCast:true});
+    box(0.3,26,FRONT_Z-REAR_Z-2,-HW+0.2,baseY+13,(FRONT_Z+REAR_Z)/2,GOLD,{noCast:true});
+    box(0.3,26,FRONT_Z-REAR_Z-2,HW-0.2,baseY+13,(FRONT_Z+REAR_Z)/2,GOLD,{noCast:true});
+    box(HW*2+5,1.6,FRONT_Z-REAR_Z+3,0,baseY+BODY_H+0.8,(FRONT_Z+REAR_Z)/2,stoneMat(HW*2,FRONT_Z-REAR_Z));
+    box(HW*2+6,1.0,FRONT_Z-REAR_Z+4,0,baseY+BODY_H+0.3,(FRONT_Z+REAR_Z)/2,GOLD,{noCast:true});
+    merlons(REAR_Z+1.5,baseY+BODY_H+1.6,-HW,HW,stoneMat(2,2,0xeee3cb));
+
+    // ============ ornate Ulam facade ============
+    const F_HW=17, F_H=48, FZ=FRONT_Z+1.2, D_HW=6.5, D_TOP=34, D_BOT=9;
+    box(F_HW-D_HW,F_H,2.2,-(D_HW+(F_HW-D_HW)/2),baseY+F_H/2,FZ,stoneMat(F_HW-D_HW,F_H));
+    box(F_HW-D_HW,F_H,2.2,(D_HW+(F_HW-D_HW)/2),baseY+F_H/2,FZ,stoneMat(F_HW-D_HW,F_H));
+    box(D_HW*2,F_H-D_TOP,2.2,0,baseY+D_TOP+(F_H-D_TOP)/2,FZ,stoneMat(D_HW*2,F_H-D_TOP));
+    box(D_HW*2,D_BOT,2.2,0,baseY+D_BOT/2,FZ,stoneMat(D_HW*2,D_BOT));
+    box(D_HW*2+1.6,D_TOP-D_BOT+1.6,0.9,0,baseY+(D_TOP+D_BOT)/2,FZ+1.0,GOLD_B);
+    box(D_HW-0.2,D_TOP-D_BOT-0.6,0.5,-D_HW/2,baseY+(D_TOP+D_BOT)/2,FZ+1.3,GOLD,{noCast:true});
+    box(D_HW-0.2,D_TOP-D_BOT-0.6,0.5,D_HW/2,baseY+(D_TOP+D_BOT)/2,FZ+1.3,GOLD,{noCast:true});
+    box(D_HW*2-0.6,D_TOP-D_BOT-0.6,0.9,0,baseY+(D_TOP+D_BOT)/2,FZ-0.4,DARK,{noCast:true});
+    box(D_HW*2-1.6,D_TOP-D_BOT-1.4,0.3,0,baseY+(D_TOP+D_BOT)/2,FZ-1.5,CURTAIN,{noCast:true});
+    for(const sx of [-1,1]) for(let k=0;k<3;k++){ box(0.5,F_H,0.6,sx*(F_HW-0.5)-sx*k*0.55,baseY+F_H/2,FZ+0.7,GOLD); }
+    box(F_HW*2,2.4,2.8,0,baseY+F_H-1.6,FZ,GOLD_B);
+    merlons(FZ+0.4,baseY+F_H,-F_HW+1,F_HW-1,GOLD);
+    box(D_HW*2+4,0.6,2.6,0,baseY+D_TOP+1.0,FZ+0.4,GOLD_B);
+    for(let gx=-D_HW-1;gx<=D_HW+1;gx+=1.4){ const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.0,6),GOLD_B); stem.position.set(gx,baseY+D_TOP+0.4,FZ+0.7); scene.add(stem);
+      for(let b=0;b<5;b++){ const grape=new THREE.Mesh(new THREE.SphereGeometry(0.16,8,8),GOLD); grape.position.set(gx+(b%2?0.14:-0.14),baseY+D_TOP-0.1-b*0.16,FZ+0.8); scene.add(grape); } }
+    rosette(-F_HW+3.2,baseY+F_H-7,FZ+1.2); rosette(F_HW-3.2,baseY+F_H-7,FZ+1.2);
+    function spikeRow(z,y,x0,x1,step){ for(let x=x0;x<=x1;x+=step){ const s=new THREE.Mesh(new THREE.ConeGeometry(0.3,1.7,6),GOLD_B); s.position.set(x,y+0.85,z); s.castShadow=true; scene.add(s); } }
+    spikeRow(FZ+0.4,baseY+F_H+1.4,-F_HW+1,F_HW-1,2.0);
+    for(let z=REAR_Z+3;z<=FRONT_Z-2;z+=2.6){ spikeRow(z,baseY+BODY_H+1.6,-HW,-HW,1); spikeRow(z,baseY+BODY_H+1.6,HW,HW,1); }
+    for(let i=0;i<12;i++){ box(D_HW*2+9-i*0.3,0.72,0.85,0,baseY+i*0.66+0.36,FZ+2+(12-i)*0.85,MARBLE_M,{walk:true,noCast:true}); }
+
+    // ============ Kiyor ============
+    (function(){ const g=new THREE.Group(); const st=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,1.4,16),bronze); st.position.y=0.7;
+      const bs=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.0,0.9,20),GOLD); bs.position.y=1.7;
+      const wt=new THREE.Mesh(new THREE.CylinderGeometry(1.15,1.15,0.1,20),new THREE.MeshStandardMaterial({color:0x6fa8c8,metalness:.3,roughness:.2,transparent:true,opacity:.85})); wt.position.y=2.05;
+      [st,bs,wt].forEach(m=>{m.castShadow=true; g.add(m);}); g.position.set(-4.5,baseY,47); scene.add(g); })();
+
+    // ============ Altar ============
+    const AZ=56; let ay=baseY; [[16,1.0],[14,1.7],[12,1.7]].forEach(([w,h])=>{ box(w,h,w,0,ay+h/2,AZ,stoneMat(w,h,0xeae0c8),{walk:true}); ay+=h; });
+    box(12.4,0.35,12.4,0,baseY+1.0+0.18,AZ,new THREE.MeshStandardMaterial({color:0xb23a2a,roughness:.8}),{noCast:true});
+    for(const sx of [-1,1]) for(const sz of [-1,1]){ const h=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.3,1.1),stoneMat(1,1,0xece2c9)); h.position.set(sx*5,ay+0.65,AZ+sz*5); h.castShadow=true; scene.add(h); }
+    box(11.5,0.3,11.5,0,ay+0.15,AZ,GOLD,{noCast:true});
+    for(let i=0;i<14;i++){ box(8-i*0.5,0.62,4.6,0,baseY+i*0.3+0.31,AZ-8-i*1.0,stoneMat(8,1,0xe6dcc4),{walk:true,noCast:true}); }
+    const fire=new THREE.PointLight(0xff8a2a,3.2,70,2); fire.position.set(0,ay+2,AZ); scene.add(fire);
+    box(7,0.6,7,0,ay+0.3,AZ,new THREE.MeshStandardMaterial({color:0x88421a,emissive:0xff5a14,emissiveIntensity:1.3}),{noCast:true});
+    const smoke=[]; const smokeMat=new THREE.MeshBasicMaterial({color:0xc3b79f,transparent:true,opacity:0,depthWrite:false});
+    for(let i=0;i<12;i++){ const p=new THREE.Mesh(new THREE.SphereGeometry(1.5,8,8),smokeMat.clone()); p.userData={t:Math.random()*5,r:Math.random()}; scene.add(p); smoke.push(p); }
+
+    // ============ water channel (amah) through the azarah ============
+    const channelMat=new THREE.MeshStandardMaterial({ map:WTEX, color:0x9fd0e6, metalness:.3, roughness:.2, transparent:true, opacity:.9 });
+    WTEX.repeat.set(1,18);
+    box(1.0,0.4,52,-13,baseY+0.05,40,channelMat,{noCast:true});
+    box(1.6,0.5,52,-13,baseY-0.05,40,stoneMat(2,52,0xd8cdb0),{noCast:true});
+
+    // ============ figures ============
+    function person(x,z,y,opts={}){ const g=new THREE.Group(); const h=opts.h||1.85;
+      const robe=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.44,h*0.78,12),opts.robe||ROBE_W); robe.position.y=h*0.39; g.add(robe);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.16,16,12),SKIN); head.position.y=h*0.78+0.18; g.add(head);
+      const beard=new THREE.Mesh(new THREE.ConeGeometry(0.13,0.24,8),HAIR); beard.position.set(0,h*0.78+0.05,0.1); beard.rotation.x=0.25; g.add(beard);
+      if(opts.turban){ const t=new THREE.Mesh(new THREE.SphereGeometry(0.185,16,10,0,Math.PI*2,0,Math.PI*0.55),opts.turban); t.position.y=h*0.78+0.26; g.add(t); }
+      else { const hair=new THREE.Mesh(new THREE.SphereGeometry(0.17,16,10,0,Math.PI*2,0,Math.PI*0.6),HAIR); hair.position.y=h*0.78+0.2; g.add(hair); }
+      if(opts.arms){ for(const sx of [-1,1]){ const a=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,h*0.5,8),opts.robe||ROBE_W); a.position.set(sx*0.3,h*0.5,0.15); a.rotation.x=-0.7; a.rotation.z=sx*0.2; g.add(a);} }
+      if(opts.hold){ opts.hold.position.set(0,h*0.5,0.4); g.add(opts.hold); }
+      g.position.set(x,y,z); if(opts.ry!=null) g.rotation.y=opts.ry; if(opts.bow) g.rotation.x=opts.bow;
+      g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); scene.add(g); return g; }
+    function harp(){ const g=new THREE.Group(); const arc=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.05,8,18,Math.PI*1.1),WOOD); arc.rotation.z=-0.6; arc.position.y=0.3; g.add(arc);
+      const post=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.7,8),WOOD); post.position.set(-0.18,0.3,0); g.add(post);
+      for(let i=0;i<7;i++){ const s=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.5-i*0.05,4),GOLD_B); s.position.set(-0.12+i*0.045,0.32,0); g.add(s);} return g; }
+    function cymbals(){ const g=new THREE.Group(); for(const sx of [-1,1]){ const d=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.04,18),GOLD_B); d.rotation.z=Math.PI/2; d.position.set(sx*0.06,0.2,0); g.add(d);} return g; }
+    function trumpet(){ const g=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.04,0.9,12),GOLD_B); b.position.set(0,0.45,0.2); b.rotation.x=-1.1; g.add(b); return g; }
+    function levite(x,z,y,inst){ const hold=inst===0?harp():inst===1?cymbals():trumpet(); return person(x,z,y,{robe:ROBE_LV,h:1.82,ry:Math.PI,arms:true,hold}); }
+    function keruv(face){ const g=new THREE.Group(); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.15,0.42,8),GOLD_B); body.position.y=0.21; g.add(body);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.11,12,10),GOLD_B); head.position.y=0.5; g.add(head);
+      for(const sx of [-1,1]){ const wing=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.55,0.4),GOLD_B); wing.position.set(sx*0.16,0.34,-0.04); wing.rotation.z=sx*0.45; wing.rotation.x=-0.35; g.add(wing);} g.rotation.y=face||0; return g; }
+    function aron(x,z,y){ const g=new THREE.Group(); const chest=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.85,0.85),GOLD_B); chest.position.y=0.43; g.add(chest);
+      const lid=new THREE.Mesh(new THREE.BoxGeometry(1.55,0.14,1.0),GOLD_B); lid.position.y=0.92; g.add(lid);
+      for(const zz of [-0.55,0.55]){ const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,2.4,8),GOLD); pole.rotation.z=Math.PI/2; pole.position.set(0,0.45,zz); g.add(pole);}
+      const k1=keruv(0.7); k1.position.set(-0.38,0.99,0); const k2=keruv(Math.PI-0.7); k2.position.set(0.38,0.99,0); g.add(k1,k2);
+      g.position.set(x,y,z); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g); return g; }
+    function kohenGadol(x,z,y,ry){ const g=new THREE.Group(); const h=1.9;
+      const robe=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.46,h*0.78,12),ROBE_W); robe.position.y=h*0.39; g.add(robe);
+      const meil=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.44,h*0.5,12),ROBE_BL); meil.position.y=h*0.42; g.add(meil);
+      for(let b=0;b<10;b++){ const bell=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,6),GOLD_B); const a=b/10*Math.PI*2; bell.position.set(Math.sin(a)*0.42,h*0.18,Math.cos(a)*0.42); g.add(bell);}
+      const ephod=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.4,0.5,12),GOLD); ephod.position.y=h*0.55; g.add(ephod);
+      const ch=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.34,0.12),GOLD_B); ch.position.set(0,h*0.6,0.34); g.add(ch);
+      for(let r=0;r<4;r++) for(let c=0;c<3;c++){ const gem=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.07,0.05),new THREE.MeshStandardMaterial({color:GEMS[r*3+c],roughness:.3,metalness:.2,emissive:GEMS[r*3+c],emissiveIntensity:.25})); gem.position.set((c-1)*0.1,h*0.6+0.1-r*0.08,0.41); g.add(gem);}
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.16,16,12),SKIN); head.position.y=h*0.78+0.18; g.add(head);
+      const beard=new THREE.Mesh(new THREE.ConeGeometry(0.15,0.3,8),new THREE.MeshStandardMaterial({color:0xe8e8e8,roughness:.9})); beard.position.set(0,h*0.78+0.02,0.11); beard.rotation.x=0.25; g.add(beard);
+      const turb=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,10,0,Math.PI*2,0,Math.PI*0.55),ROBE_W); turb.position.y=h*0.78+0.27; g.add(turb);
+      const tz=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.1,0.05),GOLD_B); tz.position.set(0,h*0.78+0.27,0.18); g.add(tz);
+      g.position.set(x,y,z); g.rotation.y=ry||0; g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g); return g; }
+
+    // ============ Nicanor Gate + 15 semicircular steps + Levite choir ============
+    const GATEZ=58; const leviim=[], kohanimArr=[];
+    for(let i=0;i<15;i++){ const r=13-i*0.66, h=0.22; const s=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,40,1,false,0,Math.PI),MARBLE_M);
+      s.position.set(0,baseY+i*h+h/2,GATEZ); s.rotation.y=-Math.PI/2; s.castShadow=s.receiveShadow=true; scene.add(s); walkable.push(s); }
+    box(4,15,3,-7,baseY+7.5,GATEZ-0.5,stoneMat(4,15,0xe6dcc4)); box(4,15,3,7,baseY+7.5,GATEZ-0.5,stoneMat(4,15,0xe6dcc4));
+    box(18,3.5,3.4,0,baseY+14,GATEZ-0.5,bronze); box(5,11,0.6,-2.6,baseY+5.5,GATEZ-0.5,bronze,{noCast:true}); box(5,11,0.6,2.6,baseY+5.5,GATEZ-0.5,bronze,{noCast:true});
+    for(let row=0;row<3;row++){ const stepIdx=4+row*3; const r=13-stepIdx*0.66, y=baseY+stepIdx*0.22+0.22; const n=6-row;
+      for(let k=0;k<n;k++){ const a=(k-(n-1)/2)*0.32; const px=Math.sin(a)*r*0.7, pz=GATEZ+Math.cos(a)*r*0.6; leviim.push(levite(px,pz,y,(k+row)%3)); } }
+
+    // kohanim at the altar
+    kohanimArr.push(person(3.5,AZ-9,baseY,{robe:ROBE_W,turban:ROBE_W,h:1.8,ry:-0.4,arms:true}));
+    kohanimArr.push(person(-3,AZ+6,baseY,{robe:ROBE_W,turban:ROBE_W,h:1.8,ry:Math.PI}));
+    kohanimArr.push(person(2,AZ+6.5,baseY,{robe:ROBE_W,turban:ROBE_W,h:1.78,ry:Math.PI+0.3}));
+    // pilgrims (Women's court, east)
+    for(let i=0;i<10;i++){ const ang=(i/10)*Math.PI-Math.PI/2; person(Math.sin(ang)*17,74+(i%3)*2.6,baseY,{robe:i%2?ROBE_W:ROBE_LV,h:1.7+(i%4)*0.05,ry:Math.PI,bow:(i%4===0)?0.5:0}); }
+
+    // ============ Soreg + warning plaque ============
+    const soregMat=new THREE.MeshStandardMaterial({color:0xcdb88a,roughness:.8,metalness:.1});
+    function soregRun(x0,z0,x1,z1){ const dx=x1-x0,dz=z1-z0,len=Math.hypot(dx,dz),n=Math.floor(len/2.2); const ang=Math.atan2(dx,dz);
+      for(let i=0;i<=n;i++){ const px=x0+dx*i/n, pz=z0+dz*i/n; const post=new THREE.Mesh(new THREE.BoxGeometry(0.16,1.2,0.16),soregMat); post.position.set(px,baseY+0.6,pz); post.castShadow=true; scene.add(post); }
+      const rail=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.14,len),soregMat); rail.position.set((x0+x1)/2,baseY+1.1,(z0+z1)/2); rail.rotation.y=ang; scene.add(rail);
+      const lat=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.9,len),new THREE.MeshStandardMaterial({color:0xcdb88a,roughness:.8,transparent:true,opacity:.5})); lat.position.set((x0+x1)/2,baseY+0.6,(z0+z1)/2); lat.rotation.y=ang; scene.add(lat); }
+    soregRun(-33,-12,-33,70); soregRun(33,-12,33,70); soregRun(-33,-12,33,-12);
+    const plaque=new THREE.Mesh(new THREE.PlaneGeometry(3.4,1.7), new THREE.MeshBasicMaterial({map:plaqueTex(['No foreigner may enter','within the balustrade','around the Sanctuary —','whoever is caught,','his death shall follow.'])}));
+    plaque.position.set(-12,baseY+2,72.4); scene.add(plaque);
+    box(3.8,4.2,0.4,-12,baseY+2,72.7,stoneMat(4,4,0xd8cdb0));
+
+    // ============ Lishkos ============
+    // Lishkas haGazis (Chamber of Hewn Stone) — the Sanhedrin, south side
+    (function(){ const cx=-30, cz=12; box(16,8,0.8,cx,baseY+4,cz-7,stoneMat(16,8)); box(0.8,8,15,cx-8,baseY+4,cz,stoneMat(15,8)); box(16,0.6,15,cx,baseY+8,cz,stoneMat(16,15),{noCast:true});
+      for(let i=0;i<11;i++){ const a=-Math.PI/2+i/10*Math.PI; const sx=cx+Math.cos(a)*5.5, sz=cz+Math.sin(a)*5.5; box(1.2,0.9,1.2,sx,baseY+0.45,sz,stoneMat(1,1,0xe6dcc4),{noCast:true}); if(i%2===0) person(sx,sz,baseY+0.9,{robe:ROBE_W,h:1.6,ry:Math.atan2(cx-sx,cz-sz)}); } })();
+    // Beis haMoked (the fire chamber) — domed, north side
+    (function(){ const cx=30, cz=8; box(13,9,13,cx,baseY+4.5,cz,stoneMat(13,9));
+      const dome=new THREE.Mesh(new THREE.SphereGeometry(7,20,12,0,Math.PI*2,0,Math.PI*0.5),GOLD); dome.position.set(cx,baseY+9,cz); dome.castShadow=true; scene.add(dome);
+      const hearth=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.6,0.8,16),stoneMat(2,1,0xd8cdb0)); hearth.position.set(cx,baseY+0.4,cz); scene.add(hearth);
+      const f2=new THREE.PointLight(0xff7a20,2.4,28,2); f2.position.set(cx,baseY+1.6,cz); scene.add(f2);
+      box(2.2,0.5,2.2,cx,baseY+0.85,cz,new THREE.MeshStandardMaterial({color:0x88421a,emissive:0xff5a14,emissiveIntensity:1.1}),{noCast:true}); })();
+
+    // ============ northern slaughter area (Beis haMitbachayim) ============
+    (function(){ const nx=15, nz=52;
+      for(let i=0;i<5;i++){ const ring=new THREE.Mesh(new THREE.TorusGeometry(0.45,0.08,8,20),bronze); ring.rotation.x=Math.PI/2; ring.position.set(nx-2+i*1.6,baseY+0.06,nz+i*1.4); scene.add(ring); }
+      for(let i=0;i<3;i++){ box(2.4,0.9,1.2,nx+5,baseY+0.45,nz+2+i*2.4,MARBLE_M,{noCast:true}); }      // marble tables (shulchanos)
+      for(let i=0;i<4;i++){ const pil=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.2,2.4,10),stoneMat(1,2,0xe0d6bd)); pil.position.set(nx+9,baseY+1.2,nz+i*2.2); pil.castShadow=true; scene.add(pil);
+        const hook=new THREE.Mesh(new THREE.TorusGeometry(0.16,0.04,6,12,Math.PI*1.4),bronze); hook.position.set(nx+9,baseY+2.5,nz+i*2.2+0.2); hook.rotation.x=Math.PI/2; scene.add(hook); } })();
+
+    // ============ vessels in the Heichal ============
+    function menorah(x,z){ const g=new THREE.Group(); const base=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.85,0.6,16),GOLD_B); base.position.y=0.3; g.add(base);
+      const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,3.1,12),GOLD_B); shaft.position.y=1.75; g.add(shaft);
+      for(const r of [0.62,1.24,1.86]) for(const s of [1,-1]){ const arc=new THREE.Mesh(new THREE.TorusGeometry(r,0.09,8,24,Math.PI),GOLD_B); arc.position.set(s*r,1.5,0); arc.rotation.z=s>0?0:Math.PI; arc.scale.y=1.25; g.add(arc);
+        const knob=new THREE.Mesh(new THREE.SphereGeometry(0.12,10,8),GOLD_B); knob.position.set(s*r*0.5,2.05,0); g.add(knob);}
+      for(let i=-3;i<=3;i++){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.1,0.24,12),GOLD_B); cup.position.set(i*0.62,3.15,0); g.add(cup); const fl=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.32,8),new THREE.MeshBasicMaterial({color:0xffd27a})); fl.position.set(i*0.62,3.42,0); g.add(fl); flames.push(fl);}
+      g.position.set(x,baseY,z); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g);
+      const lp=new THREE.PointLight(0xffd986,1.2,16,2); lp.position.set(x,baseY+3.4,z); scene.add(lp); }
+    menorah(-3.4,18);
+    (function(){ const g=new THREE.Group(); const top=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.18,1.0),GOLD_B); top.position.y=1.5;
+      [[-0.85,-0.4],[0.85,-0.4],[-0.85,0.4],[0.85,0.4]].forEach(([lx,lz])=>{ const l=new THREE.Mesh(new THREE.BoxGeometry(0.14,1.5,0.14),GOLD_B); l.position.set(lx,0.75,lz); g.add(l);}); g.add(top);
+      for(let c=0;c<2;c++) for(let r=0;r<6;r++){ const loaf=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.16,0.34),new THREE.MeshStandardMaterial({color:0xe9c98a,roughness:.85})); loaf.position.set(c?0.5:-0.5,1.62+r*0.17,-0.05); g.add(loaf);}
+      g.position.set(3.4,baseY,18); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g); })();
+    box(1.0,2.0,1.0,0,baseY+1.0,11,GOLD_B);
+    for(const sx of [-1,1]) for(const sz of [-1,1]){ const h=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.3,0.16),GOLD_B); h.position.set(sx*0.42,baseY+2.05,11+sz*0.42); scene.add(h); }
+    const incense=[]; const incMat=new THREE.MeshBasicMaterial({color:0xd9d2c0,transparent:true,opacity:0,depthWrite:false});
+    for(let i=0;i<6;i++){ const p=new THREE.Mesh(new THREE.SphereGeometry(0.35,8,8),incMat.clone()); p.userData={t:Math.random()*4}; scene.add(p); incense.push(p); }
+
+    // ============ Holy of Holies ============
+    const fstone=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.6,0.7,18),new THREE.MeshStandardMaterial({color:0xe9dcb4,roughness:.5,emissive:0xb89a4a,emissiveIntensity:.4})); fstone.position.set(0,baseY+0.35,4); fstone.receiveShadow=true; scene.add(fstone);
+    aron(0,1.5,baseY); kohenGadol(2.2,2.6,baseY,-0.7);
+    const shechina=new THREE.PointLight(0xfff0c8,2.4,26,2); shechina.position.set(0,baseY+7,2); scene.add(shechina);
+    box(8,0.2,8,0,baseY+13,2,new THREE.MeshBasicMaterial({color:0xfff3d0,transparent:true,opacity:0.16,depthWrite:false}),{noCast:true});
+
+    // ============ gatehouse + court walls ============
+    box(7,19,3,-10,baseY+9.5,82,stoneMat(7,19,0xece2cb)); box(7,19,3,10,baseY+9.5,82,stoneMat(7,19,0xece2cb));
+    box(28,4,3.4,0,baseY+17,82,GOLD_B); merlons(82,baseY+19,-11,11,GOLD);
+    box(90,8,1.4,0,baseY+4,-16,stoneMat(90,8));
+
+    // ============ collision (solid walls) ============
+    function solid(x0,x1,z0,z1){ colliders.push({x0,x1,z0,z1}); }
+    solid(-HW-1.5,HW+1.5,REAR_Z-0.9,REAR_Z+0.9);
+    solid(HW,HW+1.5,REAR_Z,FRONT_Z); solid(-HW-1.5,-HW,REAR_Z,FRONT_Z);
+    solid(-F_HW,-D_HW+0.5,FZ-1.3,FZ+1.3); solid(D_HW-0.5,F_HW,FZ-1.3,FZ+1.3);
+    solid(-14,-6,80.5,83.5); solid(6,14,80.5,83.5);
+    solid(-46,46,-17,-15);
+    solid(-9,-5,56.5,59.5); solid(5,9,56.5,59.5);
+
+    // ============ Women's-court lamp-stands (Simchas Beis haShoeiva) ============
+    function lampstand(x,z){ const g=new THREE.Group(); const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.62,11,16),GOLD); pole.position.y=5.5; g.add(pole);
+      const top=new THREE.Mesh(new THREE.CylinderGeometry(2.0,1.2,0.7,16),GOLD_B); top.position.y=11.2; g.add(top);
+      for(let i=0;i<4;i++){ const a=i/4*Math.PI*2; const bowl=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,8,0,Math.PI*2,0,Math.PI*0.5),GOLD_B); bowl.position.set(Math.cos(a)*1.3,11.5,Math.sin(a)*1.3); g.add(bowl);
+        const fl=new THREE.Mesh(new THREE.ConeGeometry(0.34,0.9,8),new THREE.MeshBasicMaterial({color:0xffcf6a})); fl.position.set(Math.cos(a)*1.3,12.25,Math.sin(a)*1.3); g.add(fl); flames.push(fl); }
+      g.position.set(x,baseY,z); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g); }
+    lampstand(-22,68); lampstand(22,68); lampstand(-22,78); lampstand(22,78);
+    const lampFlames=[ new THREE.PointLight(0xffc066,2.2,58,2), new THREE.PointLight(0xffc066,2.2,58,2) ];
+    lampFlames[0].position.set(-22,baseY+12,73); lampFlames[1].position.set(22,baseY+12,73); scene.add(lampFlames[0],lampFlames[1]);
+
+    // ============ eastern causeway + Mount of Olives (Parah Adumah) ============
+    box(9,1.2,104,0,baseY+0.3,150,stoneMat(9,104,0xe2d8bf),{walk:true});
+    for(let z=108;z<=196;z+=12){ const arch=new THREE.Mesh(new THREE.TorusGeometry(4.5,1.0,8,16,Math.PI),stoneMat(4,4,0xddd2b8)); arch.position.set(0,baseY-0.2,z); arch.rotation.x=Math.PI/2; arch.rotation.z=Math.PI; scene.add(arch);
+      box(2,4,2,-4,1.0,z,stoneMat(2,4,0xddd2b8)); box(2,4,2,4,1.0,z,stoneMat(2,4,0xddd2b8)); }
+    const mount=new THREE.Mesh(new THREE.ConeGeometry(42,24,30),new THREE.MeshStandardMaterial({color:0x8a7a4a,roughness:1})); mount.position.set(0,12,212); mount.receiveShadow=true; scene.add(mount);
+    box(5,3,5,0,21,206,stoneMat(5,3,0xe0d6bd)); const moedFire=new THREE.PointLight(0xff7a30,1.8,42,2); moedFire.position.set(0,23,206); scene.add(moedFire);
+    for(let i=0;i<16;i++){ const tr=new THREE.Group(); const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.42,2.6,8),WOOD); trunk.position.y=1.3; const leaf=new THREE.Mesh(new THREE.SphereGeometry(1.9,10,8),new THREE.MeshStandardMaterial({color:0x52803c,roughness:1})); leaf.position.y=3.6; tr.add(trunk,leaf);
+      const a=Math.random()*Math.PI*2,rr=14+Math.random()*30; tr.position.set(Math.cos(a)*rr,Math.max(1,24-rr*0.55),212+Math.sin(a)*rr*0.55); tr.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(tr); }
+
+    // ============ walking crowd of pilgrims ============
+    const crowd=[];
+    for(let i=0;i<12;i++){ const x=(i%2?1:-1)*(2+Math.random()*3); const g=person(x,90+i*7,baseY,{robe:i%2?ROBE_W:ROBE_LV,h:1.68+Math.random()*0.2,ry:Math.PI}); crowd.push({g,sp:1.4+Math.random()*1.3,ph:Math.random()*6}); }
+
+    // ============ birds + clouds ============
+    const birds=[]; const birdMat=new THREE.MeshBasicMaterial({color:0x2a2620,side:THREE.DoubleSide});
+    for(let i=0;i<10;i++){ const b=new THREE.Group(); for(const sx of [-1,1]){ const w=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.4),birdMat); w.position.x=sx*0.75; w.rotation.z=sx*0.5; b.add(w);} b.userData={r:35+Math.random()*55,sp:0.15+Math.random()*0.2,ph:Math.random()*6,y:55+Math.random()*30}; scene.add(b); birds.push(b); }
+    const clouds=[]; const cloudMat=new THREE.MeshBasicMaterial({color:0xf4efe0,transparent:true,opacity:0.7,fog:false});
+    for(let i=0;i<8;i++){ const c=new THREE.Mesh(new THREE.SphereGeometry(15+Math.random()*12,10,8),cloudMat); c.scale.y=0.4; c.position.set((Math.random()-0.5)*420,95+Math.random()*45,(Math.random()-0.5)*420+40); c.userData={sp:1+Math.random()*2}; scene.add(c); clouds.push(c); }
+
+    // ============ ESCAPE-ROOM: enclose the courts + locked learning gates ============
+    box(1.5,9,98,-37,baseY+4.5,35,stoneMat(98,9)); box(1.5,9,98,37,baseY+4.5,35,stoneMat(98,9));   // court side walls
+    solid(36,38,-14,84); solid(-38,-36,-14,84);
+    box(25,9,1.5,-24,baseY+4.5,84,stoneMat(25,9)); box(25,9,1.5,24,baseY+4.5,84,stoneMat(25,9));     // north cap (entrance funnel)
+    solid(-37,-11,83,85); solid(11,37,83,85);
+    solid(-9.5,-3.5,9,10.2); solid(3.5,9.5,9,10.2);                                                  // KHK partition sides
+
+    const gates=[]; let quizGate=null, stars=0, winning=false;
+    function makeGate(z,hw,q){ const H = hw>12?9 : (z<12?5:7); const grp=new THREE.Group();
+      const cur=new THREE.Mesh(new THREE.BoxGeometry(hw*2,H,0.4),new THREE.MeshStandardMaterial({color:0x39307e,emissive:0x2a2270,emissiveIntensity:.55,roughness:.7})); cur.position.y=baseY+H/2; grp.add(cur);
+      const fr=new THREE.Mesh(new THREE.BoxGeometry(hw*2+1.4,0.7,0.7),GOLD_B); fr.position.y=baseY+H+0.2; grp.add(fr);
+      const orb=new THREE.Mesh(new THREE.SphereGeometry(0.6,16,12),new THREE.MeshBasicMaterial({color:0xffdd66})); orb.position.set(0,baseY+H+1.5,0); grp.add(orb);
+      grp.position.z=z; grp.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(grp);
+      const cw=hw>12?40:hw; const col={x0:-cw,x1:cw,z0:z-0.6,z1:z+0.6}; colliders.push(col);
+      const g={z,hw,q,mesh:grp,H,col,solved:false,opening:false,openT:0}; gates.push(g); return g; }
+    makeGate(74,36,{t:'What is this special place?',o:['The Holy Temple 🏛️','A big castle 🏰','A zoo 🦁'],c:0,ex:'Yes! This is the Beis HaMikdash — G-d’s holy house in Jerusalem.'});
+    makeGate(57,36,{t:'What did the Levites do on these steps?',o:['Sang and played music 🎵','Cooked dinner 🍳','Took a nap 😴'],c:0,ex:'Right! Every day the Levites sang and played harps and trumpets.'});
+    makeGate(44,36,{t:'How did the kohanim go up to the altar?',o:['Up a gentle ramp ⛰️','On a tall ladder 🪜','In an elevator 🛗'],c:0,ex:'Correct! A ramp, never steps (Shemos 20:23).'});
+    makeGate(35,6.5,{t:'Which golden lamp lit up the Temple?',o:['The Menorah 🕎','A lightbulb 💡','The moon 🌙'],c:0,ex:'Yes! The golden Menorah with its seven branches.'});
+    makeGate(9.5,5,{t:'Who could enter the holiest room, once a year?',o:['The Kohen Gadol 👑','Anybody at all 🧑','A little puppy 🐶'],c:0,ex:'That’s it! Only the Kohen Gadol, on Yom Kippur (Vayikra 16).'});
+
+    const quizEl=document.getElementById('quiz'),qText=document.getElementById('q-text'),qOpts=document.getElementById('q-opts'),qFeed=document.getElementById('q-feed'),qRoom=document.getElementById('q-room');
+    function updateStars(){ document.getElementById('count').textContent='⭐ '+stars+' / '+gates.length; }
+    updateStars();
+    function showQuiz(g){ qRoom.textContent='🔒  Answer to open the gate'; qText.textContent=g.q.t; qFeed.textContent=''; qOpts.innerHTML='';
+      const opts=shuffle(g.q.o.map((text,idx)=>({text,ok:idx===g.q.c})));
+      opts.forEach(o=>{ const b=document.createElement('button'); b.className='qbtn'; b.textContent=o.text; b.onclick=()=>answer(g,o.ok,b); qOpts.appendChild(b); }); speak(g.q.t+'. '+opts.map(o=>o.text).join('. ')); quizEl.style.display='flex'; }
+    function answer(g,ok,btn){ if(ok){ g.solved=true; const k=colliders.indexOf(g.col); if(k>=0)colliders.splice(k,1); g.opening=true; stars++; updateStars(); chime(true); speak('Correct! '+g.q.ex);
+        qFeed.textContent='🎉  '+g.q.ex; qOpts.innerHTML=''; const cont=document.createElement('button'); cont.className='qbtn cont'; cont.textContent=(stars>=gates.length)?'🎉 You did it! Go inside →':'Continue →';
+        cont.onclick=()=>{ quizEl.style.display='none'; const won=stars>=gates.length; quizGate=null; controls.lock(); if(won) setTimeout(winShow,500); }; qOpts.appendChild(cont); }
+      else { qFeed.textContent='🙂  Almost — try again!'; chime(false); speak('Almost. Try again.'); if(btn) btn.style.opacity='0.45'; } }
+    function winShow(){ winning=true; document.getElementById('done-body').textContent='🏆 You are a Temple Explorer! You earned ⭐ '+stars+'/'+gates.length+' and found 🪙 '+coinCount+'/'+coins.length+' coins — and learned your way into the Holy of Holies. Amazing!'; const bt=document.getElementById('done-btns'); bt.innerHTML='';
+      const again=document.createElement('button'); again.className='qbtn cont'; again.textContent='Play again 🔁'; again.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; resetGame(); controls.lock(); };
+      const keep=document.createElement('button'); keep.className='qbtn'; keep.textContent='Keep exploring 🚶'; keep.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; controls.lock(); };
+      bt.appendChild(again); bt.appendChild(keep); document.getElementById('done').style.display='flex'; speak('Mazel tov! You did it!'); controls.unlock(); }
+    function chime(ok){ if(!audio)return; try{ const t=audio.ctx.currentTime, ns=ok?[523,659,784]:[300,235]; ns.forEach((f,k)=>{ const o=audio.ctx.createOscillator(); o.type='sine'; o.frequency.value=f; const gg=audio.ctx.createGain(); gg.gain.setValueAtTime(0,t+k*0.11); gg.gain.linearRampToValueAtTime(0.22,t+k*0.11+0.03); gg.gain.linearRampToValueAtTime(0,t+k*0.11+0.32); o.connect(gg).connect(audio.master); o.start(t+k*0.11); o.stop(t+k*0.11+0.36); }); }catch(e){} }
+
+    // ============ MORE: read-aloud, coins, river, stars/night, replay ============
+    let readAloud=true;
+    function speak(text){ try{ if(!readAloud||!window.speechSynthesis)return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.rate=0.96; u.pitch=1.06; speechSynthesis.speak(u); }catch(e){} }
+
+    const coins=[]; let coinCount=0;
+    for(const [cx,cz] of [[-10,80],[16,66],[-22,52],[18,46],[-6,40],[8,24],[0,6]]){ const grp=new THREE.Group(); const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,0.12,20),GOLD_B); disc.rotation.x=Math.PI/2; grp.add(disc); grp.position.set(cx,baseY+1.5,cz); grp.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(grp); coins.push({m:grp,halo:grp,got:false}); }
+    function updateCoins(){ const el=document.getElementById('coins'); if(el) el.textContent='🪙 '+coinCount+' / '+coins.length; }
+    updateCoins();
+
+    // the river from the Temple (Yechezkel 47), flowing east and widening
+    const riverMat=new THREE.MeshStandardMaterial({ map:WTEX, color:0x8fd0e8, metalness:.4, roughness:.15, transparent:true, opacity:.9 });
+    for(let i=0;i<8;i++){ const seg=new THREE.Mesh(new THREE.PlaneGeometry(2.5+i*1.8,16),riverMat); seg.rotation.x=-Math.PI/2; seg.position.set(0,0.06,98+i*16); scene.add(seg); }
+
+    // starfield + moon (night)
+    const starGeo=new THREE.BufferGeometry(); const starPos=[];
+    for(let i=0;i<700;i++){ const u2=Math.random()*Math.PI*2, v2=Math.acos(2*Math.random()-1); starPos.push(600*Math.sin(v2)*Math.cos(u2), Math.abs(600*Math.cos(v2))*0.85+25, 600*Math.sin(v2)*Math.sin(u2)); }
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos,3));
+    const starMat=new THREE.PointsMaterial({ color:0xffffff, size:1.7, transparent:true, opacity:0, depthWrite:false, fog:false }); const starField=new THREE.Points(starGeo,starMat); scene.add(starField);
+    const moon=new THREE.Mesh(new THREE.SphereGeometry(8,20,16), new THREE.MeshBasicMaterial({color:0xf2efe0,fog:false})); moon.position.set(-220,170,-140); moon.visible=false; scene.add(moon);
+
+    // replay
+    function resetGame(){ for(const g of gates){ if(g.solved){ g.solved=false; g.opening=false; g.openT=0; g.mesh.position.y=0; colliders.push(g.col); } } stars=0; updateStars();
+      for(const c of coins){ if(c.got){ c.got=false; c.m.visible=true; c.halo.visible=true; } } coinCount=0; updateCoins(); player.position.set(0,baseY+EYE,94); }
+
+    // ============ MORE 2: shuffle, corner chambers, guide arrow, footsteps ============
+    function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+    function cornerChamber(x,z,label){ const sx=x>0?1:-1;
+      box(11,7,0.8,x,baseY+3.5,z+5.5,stoneMat(11,7)); box(0.8,7,12,x+sx*5.5,baseY+3.5,z,stoneMat(12,7)); box(11,0.6,12,x,baseY+7,z,stoneMat(11,12),{noCast:true});
+      const sign=new THREE.Mesh(new THREE.PlaneGeometry(4.2,1.5),new THREE.MeshBasicMaterial({map:plaqueTex([label])})); sign.position.set(x,baseY+5,z-5.9); scene.add(sign); box(4.6,1.9,0.3,x,baseY+5,z-6.1,stoneMat(5,2,0xd8cdb0)); }
+    cornerChamber(-30,76,'Oil 🫒'); cornerChamber(30,76,'Wood 🪵'); cornerChamber(-30,61,'Purify 💧'); cornerChamber(30,61,'Nazirites');
+
+    const guideArrow=new THREE.Mesh(new THREE.ConeGeometry(1.0,2.2,4),new THREE.MeshBasicMaterial({color:0xffe24a})); guideArrow.rotation.x=Math.PI; guideArrow.visible=false; scene.add(guideArrow);
+
+    let stepT=0;
+    function footstep(){ if(!audio||audio.muted)return; try{ const c=audio.ctx, bl=Math.floor(c.sampleRate*0.08), buf=c.createBuffer(1,bl,c.sampleRate), d=buf.getChannelData(0);
+      for(let i=0;i<bl;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/bl,3); const s=c.createBufferSource(); s.buffer=buf; const f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=520; const g=c.createGain(); g.gain.value=0.16; s.connect(f).connect(g).connect(audio.master); s.start(); }catch(e){} }
+
+    // ============ stations ============
+    const STATIONS=[
+      {z:82,title:'1 · The Eastern Gate',body:'Shaar haMizrach — the gate of ascent. Yechezkel saw it shut: “This gate shall remain shut… for the L-rd has entered by it” (44:1–3).'},
+      {z:62,title:'2 · The Nicanor Gate & the Levites',body:'The bronze Nicanor Gate, atop fifteen semicircular steps. Here the Leviim stood with nevel, kinnor, cymbals and chatzotzros, singing the Shir shel Yom over the offering.'},
+      {z:56,title:'3 · The Altar',body:'The Mizbe’ach, with four horns and the red chut hasikra. You ascend by a ramp, never steps (Shemos 20:23); a fire burns continually (Vayikra 6:6).'},
+      {z:50,title:'4 · The slaughter & the Kiyor',body:'To the north, the rings, marble tables and hooks where the offerings were prepared; nearby the laver, where the kohanim sanctify hands and feet (Shemos 30:18–21).'},
+      {z:37,title:'5 · The Ulam',body:'The porch — the wide golden front crowned by the golden vine. “Lift up your heads, O gates… that the King of glory may enter” (Tehillim 24:7).'},
+      {z:18,title:'6 · The Heichal',body:'The gold-lined Sanctuary: the Menorah (Zechariah 4:6), the Shulchan with the lechem hapanim (Shemos 25:30), and the golden Altar of incense (Shemos 30).'},
+      {z:4,title:'7 · The Holy of Holies',body:'The Kohen Gadol enters once a year before the Aron and its Keruvim, into the cloud of the Shechina (Vayikra 16). Beneath rests the Even haShesiyah (Yoma 54b).'},
+      {z:12,title:'8 · The Chamber of Hewn Stone',body:'Lishkas haGazis — from here the Great Sanhedrin of seventy-one elders taught Torah and judged Israel, the source of law for the whole nation.',x:-30},
+      {z:-6,title:'9 · A map of the worlds above',body:'The whole Temple is a diagram of the spiritual worlds: its length, breadth and height are chesed, gevurah and tiferes. You have walked a body of light.'},
+    ];
+
+    // ============ audio (procedural) ============
+    let audio=null;
+    function startAudio(){ if(audio){ if(audio.ctx.state==='suspended') audio.ctx.resume(); return; }
+      try{ const AC=window.AudioContext||window.webkitAudioContext; const ctx=new AC(); const master=ctx.createGain(); master.gain.value=0; master.connect(ctx.destination); master.gain.setTargetAtTime(0.45,ctx.currentTime,2.5);
+        const bl=ctx.sampleRate*2; const buf=ctx.createBuffer(1,bl,ctx.sampleRate); const d=buf.getChannelData(0); let last=0; for(let i=0;i<bl;i++){ const w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*3; }
+        const noise=ctx.createBufferSource(); noise.buffer=buf; noise.loop=true; const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=430; const ng=ctx.createGain(); ng.gain.value=0.12; noise.connect(lp).connect(ng).connect(master); noise.start();
+        [110,165].forEach(f=>{ const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f; const g=ctx.createGain(); g.gain.value=0.05; o.connect(g).connect(master); o.start(); });
+        const scale=[220,247,262,294,330,294,262,247]; let step=0;
+        const chant=setInterval(()=>{ const t=ctx.currentTime,f=scale[step++%scale.length]; const o=ctx.createOscillator(); o.type='triangle'; o.frequency.value=f; const o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=f*2; const g=ctx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.12,t+0.15); g.gain.linearRampToValueAtTime(0,t+1.3); o.connect(g); o2.connect(g); g.connect(master); o.start(t); o2.start(t); o.stop(t+1.4); o2.stop(t+1.4); },1500);
+        function shofar(){ const t=ctx.currentTime; const o=ctx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(175,t); o.frequency.exponentialRampToValueAtTime(245,t+0.12); const g=ctx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.06); g.gain.setValueAtTime(0.16,t+1.5); g.gain.linearRampToValueAtTime(0,t+2.2); const f=ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900; o.connect(f).connect(g).connect(master); o.start(t); o.stop(t+2.3); }
+        const sh=setInterval(shofar,44000); setTimeout(shofar,7000);
+        audio={ctx,master,muted:false,chant,sh};
+      }catch(e){ console.warn('audio unavailable',e); } }
+    function toggleMute(){ if(!audio) return; audio.muted=!audio.muted; audio.master.gain.setTargetAtTime(audio.muted?0:0.45,audio.ctx.currentTime,0.3); document.getElementById('snd').textContent=audio.muted?'♪ muted (M)':'♪ M to mute'; }
+
+    // ============ controls ============
+    const controls=new PointerLockControls(camera,document.body); const player=controls.getObject?controls.getObject():controls.object; scene.add(player);
+    const EYE=1.7; player.position.set(0,baseY+EYE,96);
+    const overlay=document.getElementById('overlay');
+    overlay.addEventListener('click',()=>controls.lock());
+    controls.addEventListener('lock',()=>{ overlay.style.display='none'; startAudio(); });
+    controls.addEventListener('unlock',()=>{ if(quizGate||winning) return; overlay.style.display='flex'; });
+    const move={f:false,b:false,l:false,r:false};
+    let tour=false,tourIdx=0,tourWait=0;
+    const set=(e,v)=>{ const k=e.code; if(k==='KeyW'||k==='ArrowUp')move.f=v; else if(k==='KeyS'||k==='ArrowDown')move.b=v; else if(k==='KeyA'||k==='ArrowLeft')move.l=v; else if(k==='KeyD'||k==='ArrowRight')move.r=v; else if(k==='KeyM'&&v)toggleMute(); else if(k==='KeyV'&&v)readAloud=!readAloud; else if(k==='KeyT'&&v){ tour=!tour; tourWait=0; } };
+    addEventListener('keydown',e=>set(e,true)); addEventListener('keyup',e=>set(e,false));
+    addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+    const panel=document.getElementById('panel'),pTitle=document.getElementById('p-title'),pBody=document.getElementById('p-body'),count=document.getElementById('count');
+    let shown=-1;
+    function checkStations(){ const pz=player.position.z,px=player.position.x; let near=-1,best=80;
+      STATIONS.forEach((s,i)=>{ const sx=s.x||0; const dd=(px-sx)*(px-sx)+(pz-s.z)*(pz-s.z); if(dd<80&&dd<best){best=dd;near=i;} });
+      if(near===shown) return; shown=near; if(near<0){ panel.style.display='none'; return; }
+      const s=STATIONS[near]; pTitle.textContent=s.title; pBody.textContent=s.body; panel.style.display='block'; }
+
+    const down=new THREE.Vector3(0,-1,0); const ray=new THREE.Raycaster(); ray.far=80;
+    function groundHeight(){ ray.set(new THREE.Vector3(player.position.x,player.position.y+3,player.position.z),down); const hit=ray.intersectObjects(walkable,false); return hit.length?hit[0].point.y:0; }
+    function resolveCollision(){ const R=0.6; let px=player.position.x,pz=player.position.z; for(const c of colliders){ if(px>c.x0-R&&px<c.x1+R&&pz>c.z0-R&&pz<c.z1+R){ const dL=px-(c.x0-R),dR=(c.x1+R)-px,dB=pz-(c.z0-R),dF=(c.z1+R)-pz,mn=Math.min(dL,dR,dB,dF); if(mn===dL)px=c.x0-R; else if(mn===dR)px=c.x1+R; else if(mn===dB)pz=c.z0-R; else pz=c.z1+R; } } player.position.x=px; player.position.z=pz; }
+
+    // ============ loop ============
+    const clock=new THREE.Clock();
+    const fogCol=new THREE.Color();
+    function animate(){ requestAnimationFrame(animate);
+      const dt=Math.min(clock.getDelta(),0.1), now=clock.elapsedTime;
+      if(controls.isLocked){
+        if(tour){ const s=STATIONS[tourIdx],tx=s.x||0,tz=s.z,dx=tx-player.position.x,dz=tz-player.position.z,dist=Math.hypot(dx,dz);
+          if(dist>2.4){ const sp=Math.min(dist,9*dt); player.position.x+=dx/dist*sp; player.position.z+=dz/dist*sp; } else { tourWait+=dt; if(tourWait>5){ tourWait=0; tourIdx=(tourIdx+1)%STATIONS.length; } } }
+        else { const v=15*dt; if(move.f)controls.moveForward(v); if(move.b)controls.moveForward(-v); if(move.r)controls.moveRight(v); if(move.l)controls.moveRight(-v); resolveCollision();
+          if(!quizGate) for(const gt of gates){ if(!gt.solved){ const dz2=player.position.z-gt.z; if(dz2>-1.2&&dz2<5&&Math.abs(player.position.x)<gt.hw+1.5){ quizGate=gt; controls.unlock(); showQuiz(gt); break; } } } }
+        player.position.y += (groundHeight()+EYE - player.position.y)*Math.min(1,12*dt); checkStations();
+          if(move.f||move.b||move.l||move.r){ stepT+=dt; if(stepT>0.42){ stepT=0; footstep(); } }
+          for(const c of coins){ if(!c.got){ const cx=player.position.x-c.m.position.x, cz=player.position.z-c.m.position.z; if(cx*cx+cz*cz<4){ c.got=true; c.m.visible=false; c.halo.visible=false; coinCount++; updateCoins(); chime(true); } } } }
+      fire.intensity=2.8+Math.sin(now*9)*0.5+Math.sin(now*23)*0.25;
+      shechina.intensity=2.1+Math.sin(now*1.3)*0.4;
+      for(const p of smoke){ p.userData.t+=dt; const t=p.userData.t%5; p.position.set(Math.sin(t*1.4+p.userData.r*6)*0.9,ay+2+t*3.3,AZ+Math.cos(t+p.userData.r*6)*0.6); p.scale.setScalar(1+t*0.75); p.material.opacity=Math.max(0,0.5*(1-t/5)); }
+      for(const p of incense){ p.userData.t+=dt; const t=p.userData.t%4; p.position.set(Math.sin(t*2)*0.25,baseY+2+t*1.6,11); p.scale.setScalar(0.4+t*0.5); p.material.opacity=Math.max(0,0.4*(1-t/4)); }
+      WTEX.offset.y -= dt*0.6;
+      for(let i=0;i<leviim.length;i++) leviim[i].rotation.z=Math.sin(now*2.4+i)*0.06;
+      for(let i=0;i<kohanimArr.length;i++) kohanimArr[i].rotation.z=Math.sin(now*1.6+i*2)*0.04;
+      // dawn -> day cycle
+      const cyc=(now%320)/320, sa=cyc*Math.PI*2, sh=Math.sin(sa);
+      const day=Math.max(0,Math.min(1,sh*2+0.3)), night=Math.max(0,Math.min(1,-sh*2-0.1));
+      sun.intensity=0.15+day*2.1; sun.color.setRGB(1,0.78+day*0.16,0.55+day*0.35);
+      sun.position.set(120*Math.cos(sa),Math.max(8,90*sh+20),120*Math.sin(sa)+40);
+      hemi.intensity=0.18+day*0.55; amb.intensity=0.22+day*0.4;
+      const sky=0.16+day*0.86; skyMat.color.setRGB(sky*0.95,sky*0.97,Math.min(1,sky*1.05+night*0.14));
+      fogCol.setRGB(0.10+day*0.78,0.12+day*0.71,0.20+day*0.49); scene.fog.color.copy(fogCol);
+      starMat.opacity=night*0.9; moon.visible=night>0.04;
+      for(const c of crowd){ c.g.position.z-=c.sp*dt; c.g.position.y=baseY+Math.abs(Math.sin(now*4+c.ph))*0.06; if(c.g.position.z<60)c.g.position.z=128+Math.random()*30; }
+      for(const b of birds){ const a=now*b.userData.sp+b.userData.ph; b.position.set(Math.cos(a)*b.userData.r,b.userData.y,40+Math.sin(a)*b.userData.r); b.rotation.y=-a; }
+      for(const cl of clouds){ cl.position.x+=cl.userData.sp*dt; if(cl.position.x>240)cl.position.x=-240; }
+      for(const lp of lampFlames) lp.intensity=2.0+Math.sin(now*7+lp.position.x)*0.4;
+      for(const gt of gates){ if(gt.opening){ gt.openT=Math.min(1,gt.openT+dt*0.55); gt.mesh.position.y=gt.openT*(gt.H+2); if(gt.openT>=1)gt.opening=false; } }
+      for(const c of coins) if(!c.got) c.m.rotation.y+=dt*2.2;
+      { let ng=null,nd=1e9; for(const gt of gates){ if(!gt.solved){ const d=Math.abs(player.position.z-gt.z); if(d<nd){nd=d;ng=gt;} } } if(ng){ guideArrow.visible=true; guideArrow.position.set(0,baseY+ng.H+3.5+Math.sin(now*3)*0.4,ng.z); } else guideArrow.visible=false; }
+      for(const fl of flames) fl.scale.y=1+Math.sin(now*12+fl.position.x*3)*0.2;
+      renderer.render(scene,camera);
+    }
+    animate();
+    window.__templeReady=true;
+  </script>
+</body>
+</html>
