@@ -69,7 +69,7 @@
     </div>
     <div class="modes">
       <button class="modebtn" id="m-young">🧒 Ages 3–6<span>read aloud · tap the answer</span></button>
-      <button class="modebtn" id="m-old">🧑 Ages 7+<span>type your own answer</span></button>
+      <button class="modebtn" id="m-old">🧑 Ages 7+<span>multiple choice · no read‑aloud</span></button>
     </div>
     <p class="keys" style="margin-top:14px">…or click anywhere to start</p>
   </div>
@@ -429,16 +429,9 @@
     function updateStars(){ document.getElementById('count').textContent='⭐ '+stars+' / '+gates.length; }
     updateStars();
     function showQuiz(g){ g.q=g.qs[Math.floor(Math.random()*g.qs.length)]; qRoom.textContent='🔒  Answer to open the gate'; qText.textContent=g.q.t; qFeed.textContent=''; qOpts.innerHTML='';
-      if(mode==='older'){
-        const inp=document.createElement('input'); inp.className='qinput'; inp.type='text'; inp.placeholder='Type your answer…'; inp.autocomplete='off';
-        const sub=document.createElement('button'); sub.className='qbtn cont'; sub.textContent='Check ✓';
-        const go=()=>answer(g, checkType(inp.value, g.q.o[g.q.c]), null);
-        sub.onclick=go; inp.addEventListener('keydown',e=>{ if(e.code==='Enter') go(); });
-        qOpts.appendChild(inp); qOpts.appendChild(sub); quizEl.style.display='flex'; setTimeout(()=>inp.focus(),60);
-      } else {
-        const opts=shuffle(g.q.o.map((text,idx)=>({text,ok:idx===g.q.c})));
-        opts.forEach(o=>{ const b=document.createElement('button'); b.className='qbtn'; b.textContent=o.text; b.onclick=()=>answer(g,o.ok,b); qOpts.appendChild(b); }); speak(g.q.t+'. '+opts.map(o=>o.text).join('. ')); quizEl.style.display='flex';
-      } }
+      const opts=shuffle(g.q.o.map((text,idx)=>({text,ok:idx===g.q.c})));
+      opts.forEach(o=>{ const b=document.createElement('button'); b.className='qbtn'; b.textContent=o.text; b.onclick=()=>answer(g,o.ok,b); qOpts.appendChild(b); });
+      speak(g.q.t+'. '+opts.map(o=>o.text).join('. ')); quizEl.style.display='flex'; }
     function answer(g,ok,btn){ if(ok){ g.solved=true; const k=colliders.indexOf(g.col); if(k>=0)colliders.splice(k,1); g.opening=true; stars++; updateStars(); chime(true); speak('Correct! '+g.q.ex);
         qFeed.textContent='🎉  '+g.q.ex; qOpts.innerHTML=''; const cont=document.createElement('button'); cont.className='qbtn cont'; cont.textContent=(stars>=gates.length)?'🎉 You did it! Go inside →':'Continue →';
         cont.onclick=()=>{ quizEl.style.display='none'; const won=stars>=gates.length; quizGate=null; controls.lock(); if(won) setTimeout(winShow,500); }; qOpts.appendChild(cont); }
