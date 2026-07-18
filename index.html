@@ -150,18 +150,29 @@
       for(let yy=44;yy<256;yy+=88) for(let xx=36;xx<256;xx+=72){ x.strokeStyle='rgba(214,178,60,0.85)'; x.lineWidth=2.5; x.fillStyle='rgba(214,178,60,0.3)'; x.beginPath(); x.moveTo(xx,yy-16); x.lineTo(xx+16,yy); x.lineTo(xx,yy+16); x.lineTo(xx-16,yy); x.closePath(); x.fill(); x.stroke(); }
       const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
     // Herodian "Kotel" drafted-ashlar limestone — large warm blocks, recessed margins, real relief (bump)
-    function kotelStone(){ const S=512, c=document.createElement('canvas'); c.width=c.height=S; const x=c.getContext('2d');
+    function kotelStone(){ const S=1024, c=document.createElement('canvas'); c.width=c.height=S; const x=c.getContext('2d');
       const hC=document.createElement('canvas'); hC.width=hC.height=S; const hx=hC.getContext('2d');
-      x.fillStyle='#5a4c33'; x.fillRect(0,0,S,S); hx.fillStyle='#3b3b3b'; hx.fillRect(0,0,S,S);
-      const rh=64, bw=168, m=7; let seed=8712; const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; };
-      for(let r=0; r*rh<S; r++){ const y=r*rh, off=(r%2)*(bw/2);
-        for(let bx=-off; bx<S; bx+=bw){ const fx=bx+m, fy=y+m, fw=bw-2*m, fh=rh-2*m;
-          const l=206+Math.round((rnd()-0.5)*20); x.fillStyle=`rgb(${l},${Math.round(l*0.9)},${Math.round(l*0.68)})`; x.fillRect(fx,fy,fw,fh);
-          for(let i=0;i<80;i++){ const gx=fx+rnd()*fw, gy=fy+rnd()*fh; x.fillStyle=rnd()<0.5?'rgba(70,58,38,0.06)':'rgba(255,248,225,0.06)'; x.fillRect(gx,gy,2,2); }
-          x.strokeStyle='rgba(255,249,228,0.55)'; x.lineWidth=3; x.beginPath(); x.moveTo(fx,fy+fh); x.lineTo(fx,fy); x.lineTo(fx+fw,fy); x.stroke();
-          x.strokeStyle='rgba(66,52,32,0.5)'; x.beginPath(); x.moveTo(fx+fw,fy); x.lineTo(fx+fw,fy+fh); x.lineTo(fx,fy+fh); x.stroke();
-          hx.fillStyle='#c2c2c2'; hx.fillRect(fx,fy,fw,fh);
-          const gr=hx.createRadialGradient(fx+fw/2,fy+fh/2,2,fx+fw/2,fy+fh/2,Math.max(fw,fh)/1.4); gr.addColorStop(0,'#dcdcdc'); gr.addColorStop(1,'#b4b4b4'); hx.fillStyle=gr; hx.fillRect(fx+2,fy+2,fw-4,fh-4); } }
+      x.fillStyle='#574731'; x.fillRect(0,0,S,S); hx.fillStyle='#282828'; hx.fillRect(0,0,S,S);   // mortar bed / height low
+      const cols=3, rows=8, bw=S/cols, rh=S/rows, joint=Math.round(S*0.006), marg=Math.round(rh*0.17);
+      const hash=(a,b,k)=>{ let s=(((a*73856093)^(b*19349663)^(k*2654435761))>>>0); return (s%100000)/100000; };
+      function stone(sx, r, j){                 // long low Herodian ashlar; color/detail keyed to (r,j) so seam-wraps match
+        const y=r*rh, x0=sx+joint, y0=y+joint, w=bw-2*joint, h=rh-2*joint;
+        const l=201+hash(r,j,1)*30, R=l, G=l*0.865, B=l*0.63, col=(m)=>`rgb(${Math.min(255,Math.round(R*m))},${Math.round(G*m)},${Math.round(B*m)})`;   // uniform Jerusalem gold
+        x.fillStyle=col(0.83); x.fillRect(x0,y0,w,h);                                 // recessed drafted margin (flat frame)
+        const bxp=x0+marg, byp=y0+marg, bwp=w-2*marg, bhp=h-2*marg;
+        x.fillStyle=col(1); x.fillRect(bxp,byp,bwp,bhp);                              // raised central boss (the panel)
+        x.lineWidth=Math.max(3,marg*0.55);
+        x.strokeStyle='rgba(255,245,212,0.42)'; x.beginPath(); x.moveTo(bxp,byp+bhp); x.lineTo(bxp,byp); x.lineTo(bxp+bwp,byp); x.stroke();      // boss lit top+left (warm, soft)
+        x.strokeStyle='rgba(52,38,20,0.5)'; x.beginPath(); x.moveTo(bxp+bwp,byp); x.lineTo(bxp+bwp,byp+bhp); x.lineTo(bxp,byp+bhp); x.stroke();  // boss shadowed bottom+right
+        x.strokeStyle='rgba(255,247,222,0.22)'; x.lineWidth=2; x.beginPath(); x.moveTo(x0,y0+h); x.lineTo(x0,y0); x.lineTo(x0+w,y0); x.stroke();  // outer stone edge catches sun
+        x.save(); x.beginPath(); x.rect(bxp,byp,bwp,bhp); x.clip();                   // fine chisel striations + pockmarks (deterministic)
+        for(let i=0;i<40;i++){ const h1=hash(r*40+i,j,3), h2=hash(r,j*40+i,4); const cx=bxp+h1*bwp, cy=byp+h2*bhp; x.strokeStyle=(hash(i,r+j,5)<0.5)?'rgba(255,250,230,0.045)':'rgba(58,44,26,0.05)'; x.lineWidth=1; x.beginPath(); x.moveTo(cx,cy); x.lineTo(cx+5+h1*9,cy+(h2-0.5)*3); x.stroke(); }
+        for(let i=0;i<4;i++){ if(hash(i,r*7+j,6)<0.45){ const cx=bxp+hash(r,i*3+j,8)*bwp, cy=byp+hash(i*5+r,j,9)*bhp; x.fillStyle='rgba(38,28,16,0.15)'; x.beginPath(); x.arc(cx,cy,1+hash(i,j+r,2)*2,0,7); x.fill(); } }
+        x.restore();
+        hx.fillStyle='#6a6a6a'; hx.fillRect(x0,y0,w,h); hx.fillStyle='#dedede'; hx.fillRect(bxp,byp,bwp,bhp);   // height: margin low-mid, boss high
+      }
+      for(let r=0;r<rows;r++){ const odd=r%2; for(let j=0;j<cols;j++){ const sx=j*bw+(odd?bw/2:0); stone(sx,r,j); if(odd&&j===cols-1) stone(sx-S,r,j); } }
+      for(let i=0;i<18;i++){ const px=hash(i,i*3,11)*S, w=10+hash(i,i,12)*24, g=x.createLinearGradient(px,0,px+w,0); g.addColorStop(0,'rgba(74,58,34,0)'); g.addColorStop(0.5,`rgba(74,58,34,${0.025+hash(i,i,13)*0.035})`); g.addColorStop(1,'rgba(74,58,34,0)'); x.fillStyle=g; x.fillRect(px,0,w,S); }  // faint patina streaks
       const mk=(cv,srgb)=>{ const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; if(srgb)t.colorSpace=THREE.SRGBColorSpace; return t; };
       return { map:mk(c,true), bump:mk(hC,false) }; }
     const STONE=ashlar('#e7d9bb','rgba(120,104,76,0.5)'), MARBLE=marble(), GTEX=goldTexture(), WTEX=waterTex(), MOSAIC=mosaic(), PAROCHES=parochesTex();
@@ -169,7 +180,7 @@
     const texLoader=new THREE.TextureLoader();
     function ltex(u,srgb){ const t=texLoader.load(u); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; if(srgb)t.colorSpace=THREE.SRGBColorSpace; return t; }
     const MARB_D=ltex('./vendor/tex/marble_d.jpg',true), MARB_N=ltex('./vendor/tex/marble_n.jpg'), MARB_R=ltex('./vendor/tex/marble_r.jpg');
-    const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:KOTEL.map, bumpMap:KOTEL.bump, bumpScale:0.6, color:0xfff6e6, metalness:0, roughness:0.9 });
+    const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:KOTEL.map, bumpMap:KOTEL.bump, bumpScale:0.9, color:0xfff6e6, metalness:0, roughness:0.9 });
     const MARBLE_TEX_MAT=new THREE.MeshStandardMaterial({ map:MARB_D, normalMap:MARB_N, roughnessMap:MARB_R, metalness:0, normalScale:new THREE.Vector2(0.35,0.35) });
     const TILE=8;
     function stoneMat(w,h,tint){ return SANDSTONE_MAT; }
