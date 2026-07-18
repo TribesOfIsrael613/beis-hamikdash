@@ -60,9 +60,9 @@
   <div id="hud">The Beis HaMikdash · <span class="count" id="count">⭐ 0 / 5</span> · <span id="coins">🪙 0</span> · <span id="snd">♪ M</span></div>
   <div id="crosshair"></div>
   <div id="defense">
-    <div class="dtitle">⚔️ Defend the Temple! · <span id="dwave">Wave 1 / 3</span></div>
+    <div class="dtitle">🛡️ Guard the Temple! · <span id="dwave">Wave 1 / 3</span></div>
     <div class="dhpwrap"><div id="dhp"></div></div>
-    <div class="dsub">🏛️ Temple health <span id="denemies"></span></div>
+    <div class="dsub">Sound the shofar (click) to turn them back! <span id="denemies"></span></div>
   </div>
   <div id="panel"><h2 id="p-title"></h2><p id="p-body"></p></div>
   <div id="done"><div><h2>🎉 Mazel tov!</h2><p id="done-body"></p><div id="done-btns"></div></div></div>
@@ -449,7 +449,7 @@
     function winShow(){ winning=true; document.getElementById('done-body').textContent='🏆 You are a Temple Explorer! You earned ⭐ '+stars+'/'+gates.length+' and found 🪙 '+coinCount+'/'+coins.length+' coins — and learned your way into the Holy of Holies. Amazing!'; const bt=document.getElementById('done-btns'); bt.innerHTML='';
       const again=document.createElement('button'); again.className='qbtn cont'; again.textContent='Play again 🔁'; again.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; resetGame(); controls.lock(); };
       const keep=document.createElement('button'); keep.className='qbtn'; keep.textContent='Keep exploring 🚶'; keep.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; controls.lock(); };
-      const fight=document.createElement('button'); fight.className='qbtn cont'; fight.textContent='⚔️ Become a Levite warrior — defend the Temple!'; fight.onclick=()=>startDefense();
+      const fight=document.createElement('button'); fight.className='qbtn cont'; fight.textContent='🛡️ Become a Levite guard — protect the Temple!'; fight.onclick=()=>startDefense();
       bt.appendChild(fight); bt.appendChild(again); bt.appendChild(keep); document.getElementById('done').style.display='flex'; speak('Mazel tov! You did it!'); burstConfetti(); controls.unlock(); }
     function chime(ok){ if(!audio)return; try{ const t=audio.ctx.currentTime, ns=ok?[523,659,784]:[300,235]; ns.forEach((f,k)=>{ const o=audio.ctx.createOscillator(); o.type='sine'; o.frequency.value=f; const gg=audio.ctx.createGain(); gg.gain.setValueAtTime(0,t+k*0.11); gg.gain.linearRampToValueAtTime(0.22,t+k*0.11+0.03); gg.gain.linearRampToValueAtTime(0,t+k*0.11+0.32); o.connect(gg).connect(audio.master); o.start(t+k*0.11); o.stop(t+k*0.11+0.36); }); }catch(e){} }
 
@@ -520,16 +520,17 @@
     const rhSign=new THREE.Mesh(new THREE.PlaneGeometry(5.4,2.0),new THREE.MeshBasicMaterial({map:plaqueTex(['The Red Heifer','Parah Adumah']),side:THREE.DoubleSide})); rhSign.position.set(-9,PY+2.6,196); rhSign.rotation.y=0.6; scene.add(rhSign); box(5.8,2.4,0.3,-9.3,PY+2.6,196.3,stoneMat(6,2,0xd8cdb0));
     const waySign=new THREE.Mesh(new THREE.PlaneGeometry(6,1.6),new THREE.MeshBasicMaterial({map:plaqueTex(['→ Mount of Olives','& the Red Heifer']),side:THREE.DoubleSide})); waySign.position.set(7,baseY+3,100); waySign.rotation.y=Math.PI; scene.add(waySign); box(6.4,2,0.3,7,baseY+3,100.2,stoneMat(6,2,0xd8cdb0));
 
-    // ============ DEFENSE MODE — the Levite guard vs the Roman legions ============
-    let defense=false, wave=0, templeHP=100, shootCD=0, tracerT=0;
-    const enemies=[], poofs=[];
-    for(let i=0;i<28;i++){ const p=new THREE.Mesh(new THREE.SphereGeometry(0.55,8,8),new THREE.MeshBasicMaterial({color:0xffe8b0,transparent:true,opacity:0,depthWrite:false})); p.visible=false; scene.add(p); poofs.push({m:p,t:0}); }
-    // Levite staff of light + a beam, attached to the camera (first-person)
-    const staff=new THREE.Group();
-    { const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.045,0.95,8),GOLD); rod.rotation.set(0.5,0,0.15); rod.position.set(0,-0.08,-0.05); staff.add(rod);
-      const tip=new THREE.Mesh(new THREE.SphereGeometry(0.1,12,10),new THREE.MeshBasicMaterial({color:0xfff0b0})); tip.position.set(0.07,0.28,-0.3); staff.add(tip); }
-    staff.position.set(0.34,-0.34,-0.7); staff.visible=false; camera.add(staff);
-    const tracer=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,70,6),new THREE.MeshBasicMaterial({color:0xfff2b0,transparent:true,opacity:0.75})); tracer.rotation.x=Math.PI/2; tracer.position.set(0.07,-0.12,-35); tracer.visible=false; camera.add(tracer);
+    // ============ DEFENSE MODE — the Levite guard: shield & shofar, no weapons ============
+    let defense=false, wave=0, templeHP=100, blastCD=0, pulseT=0, waveActive=false;
+    const enemies=[], sparks=[];
+    for(let i=0;i<28;i++){ const p=new THREE.Mesh(new THREE.SphereGeometry(0.5,8,8),new THREE.MeshBasicMaterial({color:0xbfe6ff,transparent:true,opacity:0,depthWrite:false})); p.visible=false; scene.add(p); sparks.push({m:p,t:0}); }
+    // the shofar, held (first-person)
+    const shofar=new THREE.Group();
+    { const horn=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.1,0.75,10),new THREE.MeshStandardMaterial({color:0xd8c8a4,roughness:.6})); horn.rotation.set(0.7,0.2,0.35); horn.position.set(0,0.02,-0.05); shofar.add(horn);
+      const tip=new THREE.Mesh(new THREE.SphereGeometry(0.055,8,8),new THREE.MeshStandardMaterial({color:0xe6d8b6,roughness:.6})); tip.position.set(-0.2,0.2,-0.3); shofar.add(tip); }
+    shofar.position.set(0.32,-0.32,-0.6); shofar.visible=false; camera.add(shofar);
+    const shieldDome=new THREE.Mesh(new THREE.SphereGeometry(34,26,16,0,Math.PI*2,0,Math.PI*0.5), new THREE.MeshBasicMaterial({color:0x8fd0ff,transparent:true,opacity:0.14,side:THREE.DoubleSide,depthWrite:false})); shieldDome.position.set(0,baseY,16); shieldDome.visible=false; scene.add(shieldDome);
+    const pulse=new THREE.Mesh(new THREE.RingGeometry(0.85,1.15,40),new THREE.MeshBasicMaterial({color:0xfff2b0,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false})); pulse.rotation.x=-Math.PI/2; pulse.visible=false; scene.add(pulse);
 
     function roman(x,z){ const g=new THREE.Group(); const red=new THREE.MeshStandardMaterial({color:0x9a2b22,roughness:.8}); const steel=new THREE.MeshStandardMaterial({color:0x9297a0,metalness:.75,roughness:.4});
       const body=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.42,1.3,10),red); body.position.y=0.95; g.add(body);
@@ -541,25 +542,20 @@
       const spear=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,2.3,6),new THREE.MeshStandardMaterial({color:0x6b4a2a})); spear.position.set(0.44,1.15,0); g.add(spear);
       g.position.set(x,baseY,z); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g); return g; }
 
-    function updateDefenseHUD(){ const alive=enemies.filter(e=>e.g).length; const de=document.getElementById('denemies'); if(de)de.textContent='· ⚔️ '+alive+' legionnaires'; }
     function spawnWave(){ wave++; const dw=document.getElementById('dwave'); if(dw)dw.textContent='Wave '+wave+' / 3';
-      const n=3+wave*2; for(let i=0;i<n;i++){ const x=(Math.random()-0.5)*56, z=76+Math.random()*18; enemies.push({g:roman(x,z)}); } updateDefenseHUD(); }
+      const n=3+wave*2; for(let i=0;i<n;i++){ const x=(Math.random()-0.5)*56, z=78+Math.random()*20; enemies.push({g:roman(x,z),flee:false}); } waveActive=true; }
     function startDefense(){ document.getElementById('done').style.display='none'; winning=false; defense=true; templeHP=100; wave=0; enemies.length=0;
-      document.getElementById('defense').style.display='flex'; staff.visible=true; readAloud=false; controls.lock(); spawnWave(); }
-    function shoot(){ if(shootCD>0)return; shootCD=0.26; tracerT=0.06; tracer.visible=true;
-      if(audio){ try{ const t=audio.ctx.currentTime,o=audio.ctx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(900,t); o.frequency.exponentialRampToValueAtTime(210,t+0.12); const gg=audio.ctx.createGain(); gg.gain.setValueAtTime(0.1,t); gg.gain.linearRampToValueAtTime(0,t+0.14); o.connect(gg).connect(audio.master); o.start(t); o.stop(t+0.15); }catch(e){} }
-      const rc=new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2(0,0),camera); rc.far=140;
-      let best=null,bd=1e9; for(const e of enemies){ if(!e.g)continue; const h=rc.intersectObject(e.g,true); if(h.length && h[0].distance<bd){ bd=h[0].distance; best=e; } }
-      if(best) hitEnemy(best); }
-    function hitEnemy(e){ const p=e.g.position.clone(); scene.remove(e.g); e.g=null; chime(true); updateDefenseHUD();
-      for(const pf of poofs){ if(!pf.m.visible){ pf.m.visible=true; pf.m.position.set(p.x,p.y+1.1,p.z); pf.t=0.5; pf.m.material.opacity=0.85; pf.m.scale.setScalar(0.5); break; } }
-      if(enemies.every(x=>!x.g)){ if(wave>=3) endDefense(true); else spawnWave(); } }
-    function endDefense(win){ defense=false; staff.visible=false; tracer.visible=false; document.getElementById('defense').style.display='none';
+      document.getElementById('defense').style.display='flex'; shofar.visible=true; shieldDome.visible=true; readAloud=false; controls.lock(); spawnWave(); }
+    function blast(){ if(blastCD>0)return; blastCD=1.1; pulse.visible=true; pulseT=0.6; pulse.scale.setScalar(1); pulse.position.set(player.position.x,baseY+0.4,player.position.z); pulse.material.opacity=0.7;
+      if(audio){ try{ const t=audio.ctx.currentTime,o=audio.ctx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(255,t+0.15); const gg=audio.ctx.createGain(); gg.gain.setValueAtTime(0,t); gg.gain.linearRampToValueAtTime(0.16,t+0.05); gg.gain.linearRampToValueAtTime(0,t+0.7); const f=audio.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800; o.connect(f).connect(gg).connect(audio.master); o.start(t); o.stop(t+0.75); }catch(e){} }
+      const R2=20*20; for(const e of enemies){ if(!e.g||e.flee)continue; const dx=e.g.position.x-player.position.x, dz=e.g.position.z-player.position.z; if(dx*dx+dz*dz<R2){ e.flee=true;
+        for(const s of sparks){ if(!s.m.visible){ s.m.visible=true; s.m.position.set(e.g.position.x,e.g.position.y+1.4,e.g.position.z); s.t=0.5; s.m.material.opacity=0.85; s.m.scale.setScalar(0.5); break; } } } } }
+    function endDefense(win){ defense=false; shofar.visible=false; shieldDome.visible=false; pulse.visible=false; document.getElementById('defense').style.display='none';
       for(const e of enemies){ if(e.g){ scene.remove(e.g); e.g=null; } } winning=true; controls.unlock();
-      document.getElementById('done-body').textContent = win ? '🛡️ You defended the Beis HaMikdash! The Levite guards drove the legions back in a blaze of light. The eternal Temple stands. ⭐⭐⭐' : 'The legions pressed too hard this time. Gather your strength and defend again, brave Levite!';
-      const bt=document.getElementById('done-btns'); bt.innerHTML=''; const b=document.createElement('button'); b.className='qbtn cont'; b.textContent = win?'Play again 🔁':'Defend again ⚔️';
+      document.getElementById('done-body').textContent = win ? '🛡️ You guarded the Beis HaMikdash! The Levite guards turned the legions back with the light of the shofar. The eternal Temple stands. ⭐⭐⭐' : 'The legions pressed too close this time. Take up the shofar and guard again, brave Levite!';
+      const bt=document.getElementById('done-btns'); bt.innerHTML=''; const b=document.createElement('button'); b.className='qbtn cont'; b.textContent = win?'Play again 🔁':'Guard again 🛡️';
       b.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; if(win){ resetGame(); controls.lock(); } else startDefense(); };
-      bt.appendChild(b); if(win) speak('You defended the Holy Temple!'); document.getElementById('done').style.display='flex'; }
+      bt.appendChild(b); if(win) speak('You guarded the Holy Temple!'); document.getElementById('done').style.display='flex'; }
 
     // ============ stations ============
     const STATIONS=[
@@ -605,7 +601,7 @@
     let tour=false,tourIdx=0,tourWait=0;
     const set=(e,v)=>{ if(e.target&&e.target.tagName==='INPUT')return; const k=e.code; if(k==='KeyW'||k==='ArrowUp')move.f=v; else if(k==='KeyS'||k==='ArrowDown')move.b=v; else if(k==='KeyA'||k==='ArrowLeft')move.l=v; else if(k==='KeyD'||k==='ArrowRight')move.r=v; else if(k==='KeyM'&&v)toggleMute(); else if(k==='KeyV'&&v)readAloud=!readAloud; else if(k==='KeyT'&&v){ tour=!tour; tourWait=0; } };
     addEventListener('keydown',e=>set(e,true)); addEventListener('keyup',e=>set(e,false));
-    addEventListener('mousedown',()=>{ if(defense && controls.isLocked) shoot(); });
+    addEventListener('mousedown',()=>{ if(defense && controls.isLocked) blast(); });
     addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
     const panel=document.getElementById('panel'),pTitle=document.getElementById('p-title'),pBody=document.getElementById('p-body'),count=document.getElementById('count');
@@ -660,12 +656,18 @@
           if(nc){ guideArrow.visible=true; guideArrow.position.set(nc.m.position.x,nc.m.position.y+2.4+Math.sin(now*4)*0.3,nc.m.position.z); } else guideArrow.visible=false; } }
       for(const fl of flames) fl.scale.y=1+Math.sin(now*12+fl.position.x*3)*0.2;
       for(const p of procession){ p.g.position.z-=dt*1.3; p.g.position.y=baseY+Math.abs(Math.sin(now*4+p.off))*0.05; if(p.g.position.z<46)p.g.position.z=66; }
-      shootCD-=dt; if(tracerT>0){ tracerT-=dt; if(tracerT<=0)tracer.visible=false; }
-      for(const pf of poofs){ if(pf.t>0){ pf.t-=dt; pf.m.scale.multiplyScalar(1+2.2*dt); pf.m.material.opacity=Math.max(0,pf.t/0.5*0.85); if(pf.t<=0)pf.m.visible=false; } }
+      blastCD-=dt;
+      if(pulseT>0){ pulseT-=dt; pulse.scale.setScalar(1+(0.6-pulseT)*33); pulse.material.opacity=Math.max(0,pulseT/0.6*0.7); if(pulseT<=0)pulse.visible=false; }
+      for(const s of sparks){ if(s.t>0){ s.t-=dt; s.m.scale.multiplyScalar(1+2.2*dt); s.m.material.opacity=Math.max(0,s.t/0.5*0.85); if(s.t<=0)s.m.visible=false; } }
       if(defense){ const hp=document.getElementById('dhp'); if(hp)hp.style.width=Math.max(0,templeHP)+'%';
-        for(const e of enemies){ if(!e.g)continue; const g=e.g,dx=-g.position.x,dz=40-g.position.z,d=Math.hypot(dx,dz)||1;
-          if(d>3){ const sp=(2.3+wave*0.25)*dt; g.position.x+=dx/d*sp; g.position.z+=dz/d*sp; g.rotation.y=Math.atan2(dx,dz); g.position.y=baseY+Math.abs(Math.sin(now*6+g.position.x))*0.05; } else templeHP-=3*dt; }
-        if(templeHP<=0) endDefense(false); }
+        shieldDome.material.opacity=0.06+0.12*(templeHP/100)+Math.sin(now*3)*0.02; let adv=0;
+        for(const e of enemies){ if(!e.g)continue; const g=e.g;
+          if(e.flee){ g.position.z+=7*dt; g.position.x+=(g.position.x>=0?1:-1)*2*dt; if(g.position.z>128){ scene.remove(g); e.g=null; } }
+          else { adv++; const dx=-g.position.x,dz=40-g.position.z,d=Math.hypot(dx,dz)||1;
+            if(d>3){ const sp=(2.3+wave*0.25)*dt; g.position.x+=dx/d*sp; g.position.z+=dz/d*sp; g.rotation.y=Math.atan2(dx,dz); g.position.y=baseY+Math.abs(Math.sin(now*6+g.position.x))*0.05; } else templeHP-=3*dt; } }
+        const de=document.getElementById('denemies'); if(de)de.textContent='· 🛡️ '+adv+' advancing';
+        if(templeHP<=0) endDefense(false);
+        else if(waveActive && !enemies.some(e=>e.g)){ waveActive=false; if(wave>=3) endDefense(true); else spawnWave(); } }
       if(confettiT>0){ confettiT-=dt; for(const c of confetti){ c.vy-=15*dt; c.m.position.x+=c.vx*dt; c.m.position.y+=c.vy*dt; c.m.position.z+=c.vz*dt; c.m.rotation.x+=dt*6; c.m.rotation.y+=dt*5; if(confettiT<=0)c.m.visible=false; } }
       renderer.render(scene,camera);
     }
