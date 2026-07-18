@@ -150,7 +150,14 @@
       for(let yy=44;yy<256;yy+=88) for(let xx=36;xx<256;xx+=72){ x.strokeStyle='rgba(214,178,60,0.85)'; x.lineWidth=2.5; x.fillStyle='rgba(214,178,60,0.3)'; x.beginPath(); x.moveTo(xx,yy-16); x.lineTo(xx+16,yy); x.lineTo(xx,yy+16); x.lineTo(xx-16,yy); x.closePath(); x.fill(); x.stroke(); }
       const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
     const STONE=ashlar('#e7d9bb','rgba(120,104,76,0.5)'), MARBLE=marble(), GTEX=goldTexture(), WTEX=waterTex(), MOSAIC=mosaic(), PAROCHES=parochesTex();
-    function stoneMat(w,h,tint){ const t=STONE.clone(); t.needsUpdate=true; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(Math.max(1,w/3.2),Math.max(1,h/3.2)); return new THREE.MeshStandardMaterial({ map:t, color:tint||0xffffff, roughness:.93, metalness:0 }); }
+    const texLoader=new THREE.TextureLoader();
+    function ltex(u,srgb){ const t=texLoader.load(u); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; if(srgb)t.colorSpace=THREE.SRGBColorSpace; return t; }
+    const SAND_D=ltex('./vendor/tex/sandstone_d.jpg',true), SAND_N=ltex('./vendor/tex/sandstone_n.jpg'), SAND_R=ltex('./vendor/tex/sandstone_r.jpg');
+    const MARB_D=ltex('./vendor/tex/marble_d.jpg',true), MARB_N=ltex('./vendor/tex/marble_n.jpg'), MARB_R=ltex('./vendor/tex/marble_r.jpg');
+    const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:SAND_D, normalMap:SAND_N, roughnessMap:SAND_R, color:0xe4d3ad, metalness:0, normalScale:new THREE.Vector2(0.8,0.8) });
+    const MARBLE_TEX_MAT=new THREE.MeshStandardMaterial({ map:MARB_D, normalMap:MARB_N, roughnessMap:MARB_R, metalness:0, normalScale:new THREE.Vector2(0.35,0.35) });
+    const TILE=4.5;
+    function stoneMat(w,h,tint){ return SANDSTONE_MAT; }
 
     // ============ materials ============
     const GOLD   = new THREE.MeshStandardMaterial({ map:GTEX, color:0xfff0d2, metalness:.95, roughness:.34, emissive:0x5a3a08, emissiveIntensity:.34 });
@@ -186,7 +193,8 @@
 
     // ============ helpers ============
     const walkable=[]; const colliders=[]; const flames=[];
-    function box(w,h,d,x,y,z,mat,opts={}){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat||stoneMat(Math.max(w,d),h)); m.position.set(x,y,z); m.castShadow=opts.noCast?false:true; m.receiveShadow=true; scene.add(m); if(opts.walk) walkable.push(m); return m; }
+    function box(w,h,d,x,y,z,mat,opts={}){ const geo=new THREE.BoxGeometry(w,h,d); const uv=geo.attributes.uv; let su,sv; if(h<=w*0.6&&h<=d*0.6){ su=w/TILE; sv=d/TILE; } else { su=Math.max(w,d)/TILE; sv=h/TILE; } for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*su, uv.getY(i)*sv);
+      const m=new THREE.Mesh(geo, mat||stoneMat(Math.max(w,d),h)); m.position.set(x,y,z); m.castShadow=opts.noCast?false:true; m.receiveShadow=true; scene.add(m); if(opts.walk) walkable.push(m); return m; }
     function merlons(z,y,x0,x1,mat){ for(let x=x0;x<=x1;x+=2.4){ const b=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.4,1.2),mat); b.position.set(x,y+0.7,z); b.castShadow=true; scene.add(b); } }
     function rosette(x,y,z){ const r=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.16,10,18),GOLD_B); r.position.set(x,y,z); const c=new THREE.Mesh(new THREE.SphereGeometry(0.22,12,10),GOLD); c.position.set(x,y,z); r.castShadow=true; scene.add(r,c); }
     const baseY=1.4;
@@ -194,7 +202,7 @@
     // ============ ground + platform (marble) ============
     const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700), (()=>{ const t=MARBLE.clone(); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(50,50); return new THREE.MeshStandardMaterial({map:t,roughness:.7}); })());
     ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground); walkable.push(ground);
-    const platform=new THREE.Mesh(new THREE.BoxGeometry(126,1.4,140), MOSAIC_M); platform.position.set(0,0.7,14); platform.receiveShadow=true; platform.castShadow=true; scene.add(platform); walkable.push(platform);
+    const platform=box(126,1.4,140,0,0.7,14,MARBLE_TEX_MAT,{walk:true});
     for(let i=0;i<4;i++){ box(126-i*6,0.5,4,0,0.25,84-i*2.2,MARBLE_M,{walk:true,noCast:true}); }
 
     // ============ colonnade ============
