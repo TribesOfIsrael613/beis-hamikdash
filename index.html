@@ -300,6 +300,9 @@
     function kohenGadol(x,z,y,ry){ const g=new THREE.Group(); const h=1.9;
       const robe=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.46,h*0.78,12),ROBE_W); robe.position.y=h*0.39; g.add(robe);
       const meil=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.44,h*0.5,12),ROBE_BL); meil.position.y=h*0.42; g.add(meil);
+      const kgsh=new THREE.Mesh(new THREE.SphereGeometry(0.28,14,10),ROBE_BL); kgsh.scale.set(1,0.5,0.72); kgsh.position.y=h*0.7; g.add(kgsh);
+      for(const sx of [-1,1]){ const a=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.06,h*0.4,8),ROBE_BL); a.position.set(sx*0.3,h*0.5,0); a.rotation.z=sx*0.05; g.add(a); }
+      const kgneck=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.08,0.09,8),SKIN); kgneck.position.y=h*0.79; g.add(kgneck);
       for(let b=0;b<10;b++){ const bell=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,6),GOLD_B); const a=b/10*Math.PI*2; bell.position.set(Math.sin(a)*0.42,h*0.18,Math.cos(a)*0.42); g.add(bell);}
       const ephod=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.4,0.5,12),GOLD); ephod.position.y=h*0.55; g.add(ephod);
       const ch=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.34,0.12),GOLD_B); ch.position.set(0,h*0.6,0.34); g.add(ch);
@@ -580,6 +583,10 @@
     function roman(x,z){ const g=new THREE.Group(); const red=new THREE.MeshStandardMaterial({color:0x9a2b22,roughness:.8}); const steel=new THREE.MeshStandardMaterial({color:0x9297a0,metalness:.75,roughness:.4});
       const body=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.42,1.3,10),red); body.position.y=0.95; g.add(body);
       const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,0.72,10),steel); torso.position.y=1.25; g.add(torso);
+      const rsh=new THREE.Mesh(new THREE.SphereGeometry(0.29,14,10),steel); rsh.scale.set(1,0.5,0.72); rsh.position.y=1.55; g.add(rsh);
+      for(const sx of [-1,1]){ const a=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.06,0.55,8),red); a.position.set(sx*0.35,1.2,0); a.rotation.z=sx*0.06; g.add(a); }
+      for(const sx of [-1,1]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.08,0.55,8),red); leg.position.set(sx*0.13,0.3,0); g.add(leg); }
+      const rneck=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,0.1,8),SKIN); rneck.position.y=1.68; g.add(rneck);
       const head=new THREE.Mesh(new THREE.SphereGeometry(0.16,14,12),SKIN); head.position.y=1.82; g.add(head);
       const helm=new THREE.Mesh(new THREE.SphereGeometry(0.19,14,10,0,Math.PI*2,0,Math.PI*0.62),steel); helm.position.y=1.86; g.add(helm);
       const crest=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.18,0.34),new THREE.MeshStandardMaterial({color:0xb02a1a})); crest.position.y=2.04; g.add(crest);
