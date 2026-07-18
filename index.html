@@ -81,7 +81,8 @@
     </div>
     <div class="modes">
       <button class="modebtn" id="m-young">🧒 Ages 3–6<span>read aloud · tap the answer</span></button>
-      <button class="modebtn" id="m-old">🧑 Ages 7+<span>multiple choice · no read‑aloud</span></button>
+      <button class="modebtn" id="m-old">🧑 Ages 7–12<span>multiple choice</span></button>
+      <button class="modebtn" id="m-adult">🎓 Teens &amp; Adults<span>harder · real sources · tougher guard</span></button>
     </div>
     <p class="keys" style="margin-top:14px">…or click anywhere to start</p>
   </div>
@@ -437,10 +438,30 @@
       {t:'On which special day did he enter?',o:['Yom Kippur 🕊️','His birthday 🎈','Every Tuesday'],c:0,ex:'Yes — only on Yom Kippur, the holiest day of the year.'},
       {t:'What was kept in the Holy of Holies?',o:['The Aron (Ark) 📦','A television 📺','A racecar 🏎️'],c:0,ex:'The Aron — the Ark with the luchos — and the Keruvim above it.'}]);
 
+    // Advanced question pools (Teens & Adults) — deeper Torah, real sources
+    const ADV=[
+      [ {t:'In Yechezkel’s vision, which outer gate stays permanently shut, reserved for the Nasi?',o:['The Eastern Gate (Yechezkel 44:1–3)','The Northern Gate','The Southern Gate'],c:0,ex:'“This gate shall be shut… for Hashem has entered by it” (44:1–3).'},
+        {t:'The Ramchal’s Mishkney Elyon maps the future Temple primarily onto whose prophecy?',o:['Yechezkel (ch. 40–48)','Yeshayahu','Daniel'],c:0,ex:'Mishkney Elyon systematizes Yechezkel’s Temple vision.'},
+        {t:'Reading the “500” as reeds, how large is the future Temple Mount per side (Rashi/Ramchal)?',o:['3,000 amos','500 amos','100 amos'],c:0,ex:'500 reeds × 6 = 3,000 amos — 36× the Second Temple.'} ],
+      [ {t:'Which psalm did the Leviim sing in the Temple on Shabbos?',o:['Mizmor Shir l’Yom haShabbos (Tehillim 92)','Ashrei','Hallel'],c:0,ex:'Each day had its Shir shel Yom; Shabbos was Tehillim 92.'},
+        {t:'What is the minimum number of Leviim who stood on the duchan to sing?',o:['Twelve','Three','One'],c:0,ex:'A minimum of twelve Leviim (Arachin 13b).'},
+        {t:'The Nicanor gates were made of which metal, and famously survived a sea storm?',o:['Copper/bronze (nechoshes)','Pure gold','Iron'],c:0,ex:'Nicanor’s copper doors — the miracle recounted in Yoma 38a.'} ],
+      [ {t:'Why is the mizbe’ach built without iron tools?',o:['Iron shortens life; the altar lengthens it (Middos 3:4)','Iron rusts','Iron is too heavy'],c:0,ex:'Iron, which shortens life, may not touch what brings peace and long life.'},
+        {t:'What did the red chut hasikra around the altar mark?',o:['The line dividing upper vs lower blood applications','The maximum height','The ramp’s edge'],c:0,ex:'Some bloods are applied above the line, some below (Middos 3:1).'},
+        {t:'Which service was done on the INNER (golden) altar, not the outer one?',o:['The ketores (incense)','The olah (burnt offering)','The chatas fats'],c:0,ex:'The ketores burned on the inner golden mizbe’ach (Shemos 30).'} ],
+      [ {t:'The Menorah was formed from one block of gold. What is this called?',o:['Mikshah (Shemos 25:31)','Nesech','Chotam'],c:0,ex:'“Mikshah” — hammered from a single talent of gold.'},
+        {t:'How many spices were in the ketores (incense)?',o:['Eleven (Kereisos 6a)','Seven','Four'],c:0,ex:'Eleven spices, including the chelbenah.'},
+        {t:'The lechem hapanim was replaced weekly and stayed miraculously…',o:['Fresh and warm (Menachos 96b)','Frozen solid','Wrapped in cloth'],c:0,ex:'It stayed as fresh as the day it was baked — a standing miracle.'} ],
+      [ {t:'In the Second Temple, what stood in the (empty) Holy of Holies?',o:['The Even haShesiyah (Foundation Stone)','The Menorah','Absolutely nothing'],c:0,ex:'The Aron was hidden; the Kohen Gadol rested the incense on the Stone (Yoma 53b).'},
+        {t:'Which garments did the Kohen Gadol wear entering the KHK on Yom Kippur?',o:['The white linen (bigdei lavan)','The eight golden garments','His everyday clothes'],c:0,ex:'The inner avodah was done in plain white linen (Vayikra 16:4).'},
+        {t:'The Ramchal describes the Temple’s three axes as which three sefiros?',o:['Chesed, Gevurah, Tiferes (length, breadth, height)','Keser, Chochmah, Binah','Netzach, Hod, Yesod'],c:0,ex:'Length = chesed, breadth = gevurah/din, height = tiferes/rachamim.'} ],
+    ];
+    gates.forEach((g,i)=>{ if(ADV[i]) g.qsAdv=ADV[i]; });
+
     const quizEl=document.getElementById('quiz'),qText=document.getElementById('q-text'),qOpts=document.getElementById('q-opts'),qFeed=document.getElementById('q-feed'),qRoom=document.getElementById('q-room');
     function updateStars(){ document.getElementById('count').textContent='⭐ '+stars+' / '+gates.length; }
     updateStars();
-    function showQuiz(g){ g.q=g.qs[Math.floor(Math.random()*g.qs.length)]; qRoom.textContent='🔒  Answer to open the gate'; qText.textContent=g.q.t; qFeed.textContent=''; qOpts.innerHTML='';
+    function showQuiz(g){ const pool=(mode==='adult'&&g.qsAdv)?g.qsAdv:g.qs; g.q=pool[Math.floor(Math.random()*pool.length)]; qRoom.textContent='🔒  Answer to open the gate'; qText.textContent=g.q.t; qFeed.textContent=''; qOpts.innerHTML='';
       const opts=shuffle(g.q.o.map((text,idx)=>({text,ok:idx===g.q.c})));
       opts.forEach(o=>{ const b=document.createElement('button'); b.className='qbtn'; b.textContent=o.text; b.onclick=()=>answer(g,o.ok,b); qOpts.appendChild(b); });
       speak(g.q.t+'. '+opts.map(o=>o.text).join('. ')); quizEl.style.display='flex'; }
@@ -523,7 +544,7 @@
     const waySign=new THREE.Mesh(new THREE.PlaneGeometry(6,1.6),new THREE.MeshBasicMaterial({map:plaqueTex(['→ Mount of Olives','& the Red Heifer']),side:THREE.DoubleSide})); waySign.position.set(7,baseY+3,100); waySign.rotation.y=Math.PI; scene.add(waySign); box(6.4,2,0.3,7,baseY+3,100.2,stoneMat(6,2,0xd8cdb0));
 
     // ============ DEFENSE MODE — the Levite guard: shield & shofar, no weapons ============
-    let defense=false, wave=0, templeHP=100, blastCD=0, pulseT=0, waveActive=false, waveGap=0, domeFlash=0, toastTimer=0;
+    let defense=false, wave=0, templeHP=100, blastCD=0, pulseT=0, waveActive=false, waveGap=0, domeFlash=0, toastTimer=0, maxWave=3;
     function toast(text,ms){ const el=document.getElementById('toast'); if(!el)return; el.textContent=text; el.style.opacity='1'; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ el.style.opacity='0'; }, ms||1800); }
     const enemies=[], sparks=[];
     for(let i=0;i<28;i++){ const p=new THREE.Mesh(new THREE.SphereGeometry(0.5,8,8),new THREE.MeshBasicMaterial({color:0xbfe6ff,transparent:true,opacity:0,depthWrite:false})); p.visible=false; scene.add(p); sparks.push({m:p,t:0}); }
@@ -545,9 +566,9 @@
       const spear=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,2.3,6),new THREE.MeshStandardMaterial({color:0x6b4a2a})); spear.position.set(0.44,1.15,0); g.add(spear);
       g.position.set(x,baseY,z); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g); return g; }
 
-    function spawnWave(){ wave++; const dw=document.getElementById('dwave'); if(dw)dw.textContent='Wave '+wave+' / 3';
-      const n=3+wave*2; for(let i=0;i<n;i++){ const x=(Math.random()-0.5)*56, z=78+Math.random()*20; enemies.push({g:roman(x,z),flee:false}); } waveActive=true; toast('Wave '+wave+' — hold the line! 🛡️'); }
-    function startDefense(){ document.getElementById('done').style.display='none'; winning=false; defense=true; templeHP=100; wave=0; enemies.length=0;
+    function spawnWave(){ wave++; const dw=document.getElementById('dwave'); if(dw)dw.textContent='Wave '+wave+' / '+maxWave;
+      const n=(mode==='adult'?5:3)+wave*2; for(let i=0;i<n;i++){ const x=(Math.random()-0.5)*56, z=78+Math.random()*20; enemies.push({g:roman(x,z),flee:false}); } waveActive=true; toast('Wave '+wave+' — hold the line! 🛡️'); }
+    function startDefense(){ document.getElementById('done').style.display='none'; winning=false; defense=true; templeHP=100; wave=0; enemies.length=0; maxWave=(mode==='adult')?5:3;
       document.getElementById('defense').style.display='flex'; shofar.visible=true; shieldDome.visible=true; readAloud=false; controls.lock(); spawnWave(); }
     function blast(){ if(blastCD>0)return; blastCD=1.1; domeFlash=0.3; pulse.visible=true; pulseT=0.6; pulse.scale.setScalar(1); pulse.position.set(player.position.x,baseY+0.4,player.position.z); pulse.material.opacity=0.7;
       if(audio){ try{ const t=audio.ctx.currentTime,o=audio.ctx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(255,t+0.15); const gg=audio.ctx.createGain(); gg.gain.setValueAtTime(0,t); gg.gain.linearRampToValueAtTime(0.16,t+0.05); gg.gain.linearRampToValueAtTime(0,t+0.7); const f=audio.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800; o.connect(f).connect(gg).connect(audio.master); o.start(t); o.stop(t+0.75); }catch(e){} }
@@ -597,9 +618,10 @@
     controls.addEventListener('lock',()=>{ overlay.style.display='none'; startAudio(); });
     controls.addEventListener('unlock',()=>{ if(quizGate||winning) return; overlay.style.display='flex'; });
     const beginGame=(m)=>{ mode=m; readAloud=(m==='younger'); controls.lock(); };
-    { const my=document.getElementById('m-young'), mo=document.getElementById('m-old');
+    { const my=document.getElementById('m-young'), mo=document.getElementById('m-old'), ma=document.getElementById('m-adult');
       if(my) my.onclick=(e)=>{ e.stopPropagation(); beginGame('younger'); };
-      if(mo) mo.onclick=(e)=>{ e.stopPropagation(); beginGame('older'); }; }
+      if(mo) mo.onclick=(e)=>{ e.stopPropagation(); beginGame('older'); };
+      if(ma) ma.onclick=(e)=>{ e.stopPropagation(); beginGame('adult'); }; }
     const move={f:false,b:false,l:false,r:false};
     let tour=false,tourIdx=0,tourWait=0;
     const set=(e,v)=>{ if(e.target&&e.target.tagName==='INPUT')return; const k=e.code; if(k==='KeyW'||k==='ArrowUp')move.f=v; else if(k==='KeyS'||k==='ArrowDown')move.b=v; else if(k==='KeyA'||k==='ArrowLeft')move.l=v; else if(k==='KeyD'||k==='ArrowRight')move.r=v; else if(k==='KeyM'&&v)toggleMute(); else if(k==='KeyV'&&v)readAloud=!readAloud; else if(k==='KeyT'&&v){ tour=!tour; tourWait=0; } };
@@ -667,10 +689,10 @@
         for(const e of enemies){ if(!e.g)continue; const g=e.g;
           if(e.flee){ g.position.z+=7*dt; g.position.x+=(g.position.x>=0?1:-1)*2*dt; if(g.position.z>128){ scene.remove(g); e.g=null; } }
           else { adv++; const dx=-g.position.x,dz=40-g.position.z,d=Math.hypot(dx,dz)||1;
-            if(d>3){ const sp=(2.3+wave*0.25)*dt; g.position.x+=dx/d*sp; g.position.z+=dz/d*sp; g.rotation.y=Math.atan2(dx,dz); g.position.y=baseY+Math.abs(Math.sin(now*6+g.position.x))*0.05; } else templeHP-=3*dt; } }
+            if(d>3){ const sp=((mode==='adult'?3.1:2.3)+wave*0.25)*dt; g.position.x+=dx/d*sp; g.position.z+=dz/d*sp; g.rotation.y=Math.atan2(dx,dz); g.position.y=baseY+Math.abs(Math.sin(now*6+g.position.x))*0.05; } else templeHP-=3*dt; } }
         const de=document.getElementById('denemies'); if(de)de.textContent='· 🛡️ '+adv+' advancing';
         if(templeHP<=0) endDefense(false);
-        else if(waveActive && !enemies.some(e=>e.g)){ waveActive=false; if(wave>=3){ endDefense(true); } else { waveGap=1.8; toast('Wave cleared! 🎉'); } }
+        else if(waveActive && !enemies.some(e=>e.g)){ waveActive=false; if(wave>=maxWave){ endDefense(true); } else { waveGap=1.8; toast('Wave cleared! 🎉'); } }
         else if(!waveActive && waveGap>0){ waveGap-=dt; if(waveGap<=0) spawnWave(); } }
       if(confettiT>0){ confettiT-=dt; for(const c of confetti){ c.vy-=15*dt; c.m.position.x+=c.vx*dt; c.m.position.y+=c.vy*dt; c.m.position.z+=c.vz*dt; c.m.rotation.x+=dt*6; c.m.rotation.y+=dt*5; if(confettiT<=0)c.m.visible=false; } }
       renderer.render(scene,camera);
