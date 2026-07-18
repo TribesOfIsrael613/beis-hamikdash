@@ -262,14 +262,17 @@
     box(1.6,0.5,52,-13,baseY-0.05,40,stoneMat(2,52,0xd8cdb0),{noCast:true});
 
     // ============ figures ============
-    function person(x,z,y,opts={}){ const g=new THREE.Group(); const h=opts.h||1.85;
-      const robe=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.44,h*0.78,12),opts.robe||ROBE_W); robe.position.y=h*0.39; g.add(robe);
-      const head=new THREE.Mesh(new THREE.SphereGeometry(0.16,16,12),SKIN); head.position.y=h*0.78+0.18; g.add(head);
-      const beard=new THREE.Mesh(new THREE.ConeGeometry(0.13,0.24,8),HAIR); beard.position.set(0,h*0.78+0.05,0.1); beard.rotation.x=0.25; g.add(beard);
-      if(opts.turban){ const t=new THREE.Mesh(new THREE.SphereGeometry(0.185,16,10,0,Math.PI*2,0,Math.PI*0.55),opts.turban); t.position.y=h*0.78+0.26; g.add(t); }
-      else { const hair=new THREE.Mesh(new THREE.SphereGeometry(0.17,16,10,0,Math.PI*2,0,Math.PI*0.6),HAIR); hair.position.y=h*0.78+0.2; g.add(hair); }
-      if(opts.arms){ for(const sx of [-1,1]){ const a=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,h*0.5,8),opts.robe||ROBE_W); a.position.set(sx*0.3,h*0.5,0.15); a.rotation.x=-0.7; a.rotation.z=sx*0.2; g.add(a);} }
-      if(opts.hold){ opts.hold.position.set(0,h*0.5,0.4); g.add(opts.hold); }
+    function person(x,z,y,opts={}){ const g=new THREE.Group(); const h=opts.h||1.8; const rm=opts.robe||ROBE_W;
+      const skirt=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.3,h*0.52,12),rm); skirt.position.y=h*0.26; g.add(skirt);
+      const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.23,0.21,h*0.32,12),rm); torso.position.y=h*0.64; g.add(torso);
+      const shoulders=new THREE.Mesh(new THREE.SphereGeometry(0.25,14,10),rm); shoulders.scale.set(1,0.55,0.72); shoulders.position.y=h*0.78; g.add(shoulders);
+      for(const sx of [-1,1]){ const a=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.05,h*0.42,8),rm); a.position.set(sx*0.25,h*0.56,0); a.rotation.z=sx*0.05; g.add(a); }
+      const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,0.09,8),SKIN); neck.position.y=h*0.83; g.add(neck);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.135,16,14),SKIN); head.position.y=h*0.9; g.add(head);
+      const beard=new THREE.Mesh(new THREE.ConeGeometry(0.11,0.2,8),HAIR); beard.position.set(0,h*0.86,0.08); beard.rotation.x=0.3; g.add(beard);
+      if(opts.turban){ const t=new THREE.Mesh(new THREE.SphereGeometry(0.155,16,10,0,Math.PI*2,0,Math.PI*0.58),opts.turban); t.position.y=h*0.93; g.add(t); }
+      else { const hair=new THREE.Mesh(new THREE.SphereGeometry(0.145,16,10,0,Math.PI*2,0,Math.PI*0.62),HAIR); hair.position.y=h*0.92; g.add(hair); }
+      if(opts.hold){ opts.hold.position.set(0,h*0.5,0.34); g.add(opts.hold); }
       g.position.set(x,y,z); if(opts.ry!=null) g.rotation.y=opts.ry; if(opts.bow) g.rotation.x=opts.bow;
       g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); scene.add(g); return g; }
     function harp(){ const g=new THREE.Group(); const arc=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.05,8,18,Math.PI*1.1),WOOD); arc.rotation.z=-0.6; arc.position.y=0.3; g.add(arc);
