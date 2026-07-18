@@ -91,6 +91,10 @@
   <script type="module">
     import * as THREE from 'three';
     import { PointerLockControls } from './vendor/PointerLockControls.js';
+    import { EffectComposer } from './vendor/jsm/postprocessing/EffectComposer.js';
+    import { RenderPass } from './vendor/jsm/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from './vendor/jsm/postprocessing/UnrealBloomPass.js';
+    import { OutputPass } from './vendor/jsm/postprocessing/OutputPass.js';
 
     // ============ renderer / scene ============
     const renderer = new THREE.WebGLRenderer({ antialias:true });
@@ -103,6 +107,11 @@
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 2000);
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.6, 0.6, 0.7);
+    composer.addPass(bloomPass);
+    composer.addPass(new OutputPass());
 
     // ============ procedural textures ============
     function ashlar(base, mortar){ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
@@ -634,7 +643,7 @@
     const set=(e,v)=>{ if(e.target&&e.target.tagName==='INPUT')return; const k=e.code; if(k==='KeyW'||k==='ArrowUp')move.f=v; else if(k==='KeyS'||k==='ArrowDown')move.b=v; else if(k==='KeyA'||k==='ArrowLeft')move.l=v; else if(k==='KeyD'||k==='ArrowRight')move.r=v; else if(k==='KeyM'&&v)toggleMute(); else if(k==='KeyV'&&v)readAloud=!readAloud; else if(k==='KeyT'&&v){ tour=!tour; tourWait=0; } };
     addEventListener('keydown',e=>set(e,true)); addEventListener('keyup',e=>set(e,false));
     addEventListener('mousedown',()=>{ if(defense && controls.isLocked) blast(); });
-    addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+    addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight); });
 
     const panel=document.getElementById('panel'),pTitle=document.getElementById('p-title'),pBody=document.getElementById('p-body'),count=document.getElementById('count');
     let shown=-1;
@@ -702,7 +711,7 @@
         else if(waveActive && !enemies.some(e=>e.g)){ waveActive=false; if(wave>=maxWave){ endDefense(true); } else { waveGap=1.8; toast('Wave cleared! 🎉'); } }
         else if(!waveActive && waveGap>0){ waveGap-=dt; if(waveGap<=0) spawnWave(); } }
       if(confettiT>0){ confettiT-=dt; for(const c of confetti){ c.vy-=15*dt; c.m.position.x+=c.vx*dt; c.m.position.y+=c.vy*dt; c.m.position.z+=c.vz*dt; c.m.rotation.x+=dt*6; c.m.rotation.y+=dt*5; if(confettiT<=0)c.m.visible=false; } }
-      renderer.render(scene,camera);
+      composer.render();
     }
     animate();
     window.__templeReady=true;
