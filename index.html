@@ -175,8 +175,8 @@
     function stoneMat(w,h,tint){ return SANDSTONE_MAT; }
 
     // ============ materials ============
-    const GOLD   = new THREE.MeshStandardMaterial({ map:GTEX, color:0xfff0d2, metalness:.95, roughness:.34, emissive:0x5a3a08, emissiveIntensity:.34 });
-    const GOLD_B = new THREE.MeshStandardMaterial({ map:GTEX, color:0xfff4dc, metalness:1,   roughness:.24, emissive:0x7d540f, emissiveIntensity:.55 });
+    const GOLD   = new THREE.MeshStandardMaterial({ map:GTEX, color:0xfff0d2, metalness:.95, roughness:.32, emissive:0x5a3a08, emissiveIntensity:.34, envMapIntensity:1.25 });
+    const GOLD_B = new THREE.MeshStandardMaterial({ map:GTEX, color:0xfff4dc, metalness:1,   roughness:.22, emissive:0x7d540f, emissiveIntensity:.55, envMapIntensity:1.35 });
     const bronze = new THREE.MeshStandardMaterial({ color:0x9a6f34, metalness:.88, roughness:.4 });
     const DARK   = new THREE.MeshStandardMaterial({ color:0x0d0a06, roughness:1 });
     const CURTAIN= new THREE.MeshStandardMaterial({ color:0x6b1f2c, roughness:.7, emissive:0x230709, emissiveIntensity:.5 });
@@ -194,12 +194,17 @@
     const skyMat = (()=>{ const c=document.createElement('canvas'); c.width=16; c.height=256; const ctx=c.getContext('2d'); const g=ctx.createLinearGradient(0,0,0,256);
       g.addColorStop(0,'#1a3563'); g.addColorStop(0.4,'#5b7aa6'); g.addColorStop(0.68,'#c9b28c'); g.addColorStop(0.85,'#e9cb9c'); g.addColorStop(1,'#f2dcae'); ctx.fillStyle=g; ctx.fillRect(0,0,16,256);
       const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; const m=new THREE.MeshBasicMaterial({map:t,side:THREE.BackSide,fog:false}); scene.add(new THREE.Mesh(new THREE.SphereGeometry(740,32,16),m)); return m; })();
+    // sun disk + soft glow in the sky (matches the directional sun direction)
+    (()=>{ const sd=new THREE.Vector3(75,100,140).normalize().multiplyScalar(690);
+      const disk=new THREE.Mesh(new THREE.CircleGeometry(24,32), new THREE.MeshBasicMaterial({color:0xfff7e2,fog:false,transparent:true,opacity:0.96,depthWrite:false})); disk.position.copy(sd); disk.lookAt(0,0,0); scene.add(disk);
+      const gc=document.createElement('canvas'); gc.width=gc.height=128; const gx=gc.getContext('2d'); const rg=gx.createRadialGradient(64,64,3,64,64,64); rg.addColorStop(0,'rgba(255,247,224,0.95)'); rg.addColorStop(0.28,'rgba(255,238,198,0.4)'); rg.addColorStop(1,'rgba(255,238,198,0)'); gx.fillStyle=rg; gx.fillRect(0,0,128,128);
+      const gt=new THREE.CanvasTexture(gc); const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:gt,fog:false,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})); glow.scale.setScalar(280); glow.position.copy(sd); scene.add(glow); })();
     scene.fog = new THREE.Fog(0xe9d6b0, 95, 560);
     // gold reflections — image-based lighting from a tiny sky environment
     try{ const pmrem=new THREE.PMREMGenerator(renderer); const es=new THREE.Scene();
       es.add(new THREE.Mesh(new THREE.SphereGeometry(50,16,12), new THREE.MeshBasicMaterial({color:0x60789a,side:THREE.BackSide})));
       const sgnd=new THREE.Mesh(new THREE.SphereGeometry(50,16,8,0,Math.PI*2,Math.PI*0.55,Math.PI*0.45), new THREE.MeshBasicMaterial({color:0x6b5a3a,side:THREE.BackSide})); es.add(sgnd);
-      const ssun=new THREE.Mesh(new THREE.SphereGeometry(7,12,12), new THREE.MeshBasicMaterial({color:0xfff2d0})); ssun.position.set(22,26,16); es.add(ssun);
+      const ssun=new THREE.Mesh(new THREE.SphereGeometry(8,14,14), new THREE.MeshBasicMaterial({color:0xffffff})); ssun.position.set(22,26,16); es.add(ssun);
       scene.environment=pmrem.fromScene(es,0.05).texture; pmrem.dispose();
     }catch(e){ console.warn('env map unavailable',e); }
     const hemi=new THREE.HemisphereLight(0xdfe4ee,0x9a7a49,0.5); scene.add(hemi);
