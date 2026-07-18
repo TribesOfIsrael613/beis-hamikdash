@@ -149,12 +149,27 @@
       for(let i=0;i<256;i+=18){ x.fillStyle='rgba(0,0,0,0.14)'; x.fillRect(i,0,4,256); x.fillStyle='rgba(255,255,255,0.06)'; x.fillRect(i+9,0,3,256); }
       for(let yy=44;yy<256;yy+=88) for(let xx=36;xx<256;xx+=72){ x.strokeStyle='rgba(214,178,60,0.85)'; x.lineWidth=2.5; x.fillStyle='rgba(214,178,60,0.3)'; x.beginPath(); x.moveTo(xx,yy-16); x.lineTo(xx+16,yy); x.lineTo(xx,yy+16); x.lineTo(xx-16,yy); x.closePath(); x.fill(); x.stroke(); }
       const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
+    // Herodian "Kotel" drafted-ashlar limestone — large warm blocks, recessed margins, real relief (bump)
+    function kotelStone(){ const S=512, c=document.createElement('canvas'); c.width=c.height=S; const x=c.getContext('2d');
+      const hC=document.createElement('canvas'); hC.width=hC.height=S; const hx=hC.getContext('2d');
+      x.fillStyle='#5a4c33'; x.fillRect(0,0,S,S); hx.fillStyle='#3b3b3b'; hx.fillRect(0,0,S,S);
+      const rh=64, bw=168, m=7; let seed=8712; const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; };
+      for(let r=0; r*rh<S; r++){ const y=r*rh, off=(r%2)*(bw/2);
+        for(let bx=-off; bx<S; bx+=bw){ const fx=bx+m, fy=y+m, fw=bw-2*m, fh=rh-2*m;
+          const l=206+Math.round((rnd()-0.5)*20); x.fillStyle=`rgb(${l},${Math.round(l*0.9)},${Math.round(l*0.68)})`; x.fillRect(fx,fy,fw,fh);
+          for(let i=0;i<80;i++){ const gx=fx+rnd()*fw, gy=fy+rnd()*fh; x.fillStyle=rnd()<0.5?'rgba(70,58,38,0.06)':'rgba(255,248,225,0.06)'; x.fillRect(gx,gy,2,2); }
+          x.strokeStyle='rgba(255,249,228,0.55)'; x.lineWidth=3; x.beginPath(); x.moveTo(fx,fy+fh); x.lineTo(fx,fy); x.lineTo(fx+fw,fy); x.stroke();
+          x.strokeStyle='rgba(66,52,32,0.5)'; x.beginPath(); x.moveTo(fx+fw,fy); x.lineTo(fx+fw,fy+fh); x.lineTo(fx,fy+fh); x.stroke();
+          hx.fillStyle='#c2c2c2'; hx.fillRect(fx,fy,fw,fh);
+          const gr=hx.createRadialGradient(fx+fw/2,fy+fh/2,2,fx+fw/2,fy+fh/2,Math.max(fw,fh)/1.4); gr.addColorStop(0,'#dcdcdc'); gr.addColorStop(1,'#b4b4b4'); hx.fillStyle=gr; hx.fillRect(fx+2,fy+2,fw-4,fh-4); } }
+      const mk=(cv,srgb)=>{ const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; if(srgb)t.colorSpace=THREE.SRGBColorSpace; return t; };
+      return { map:mk(c,true), bump:mk(hC,false) }; }
     const STONE=ashlar('#e7d9bb','rgba(120,104,76,0.5)'), MARBLE=marble(), GTEX=goldTexture(), WTEX=waterTex(), MOSAIC=mosaic(), PAROCHES=parochesTex();
+    const KOTEL=kotelStone();
     const texLoader=new THREE.TextureLoader();
     function ltex(u,srgb){ const t=texLoader.load(u); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; if(srgb)t.colorSpace=THREE.SRGBColorSpace; return t; }
-    const SAND_D=ltex('./vendor/tex/jstone_d.jpg',true), SAND_N=ltex('./vendor/tex/jstone_n.jpg'), SAND_R=ltex('./vendor/tex/jstone_r.jpg');
     const MARB_D=ltex('./vendor/tex/marble_d.jpg',true), MARB_N=ltex('./vendor/tex/marble_n.jpg'), MARB_R=ltex('./vendor/tex/marble_r.jpg');
-    const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:SAND_D, normalMap:SAND_N, roughnessMap:SAND_R, color:0xffedcf, metalness:0, roughness:0.85, normalScale:new THREE.Vector2(0.6,0.6) });
+    const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:KOTEL.map, bumpMap:KOTEL.bump, bumpScale:0.6, color:0xfff6e6, metalness:0, roughness:0.9 });
     const MARBLE_TEX_MAT=new THREE.MeshStandardMaterial({ map:MARB_D, normalMap:MARB_N, roughnessMap:MARB_R, metalness:0, normalScale:new THREE.Vector2(0.35,0.35) });
     const TILE=8;
     function stoneMat(w,h,tint){ return SANDSTONE_MAT; }
