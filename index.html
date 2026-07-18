@@ -443,6 +443,8 @@
     lampstand(-22,68); lampstand(22,68); lampstand(-22,78); lampstand(22,78);
     const lampFlames=[ new THREE.PointLight(0xffc066,2.2,58,2), new THREE.PointLight(0xffc066,2.2,58,2) ];
     lampFlames[0].position.set(-22,baseY+12,73); lampFlames[1].position.set(22,baseY+12,73); scene.add(lampFlames[0],lampFlames[1]);
+    // warm interior fill (Menorah & clerestory glow) so the Heichal/KHK stone reads golden, not cold
+    [[0,6,18,0xffcf87,2.6,36],[0,6,33,0xffca80,1.7,32],[0,5,9,0xffe0a0,1.8,24]].forEach(([x,y,z,c,i,d])=>{ const L=new THREE.PointLight(c,i,d,2); L.position.set(x,baseY+y,z); scene.add(L); });
 
     // ============ eastern causeway + Mount of Olives (Parah Adumah) ============
     box(9,1.2,104,0,baseY+0.3,150,stoneMat(9,104,0xe2d8bf),{walk:true});
