@@ -115,9 +115,11 @@
 
     // ============ procedural textures ============
     function ashlar(base, mortar){ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
-      x.fillStyle=base; x.fillRect(0,0,512,512);
-      for(let i=0;i<9000;i++){ const v=Math.random(); x.fillStyle=`rgba(${120+v*120|0},${108+v*110|0},${82+v*95|0},0.06)`; x.fillRect(Math.random()*512,Math.random()*512,3,2); }
-      x.strokeStyle=mortar; x.lineWidth=3; const rh=56;
+      x.fillStyle=base; x.fillRect(0,0,512,512); const rh=56, bw=140;
+      for(let r=0;r*rh<512;r++){ const off=(r%2)*70; for(let bx=-off;bx<512;bx+=bw){ const v=Math.random()-0.5; x.fillStyle=v>0?`rgba(150,120,70,${v*0.17})`:`rgba(70,58,38,${-v*0.17})`; x.fillRect(bx+2,r*rh+2,bw-4,rh-4); } }
+      for(let i=0;i<13000;i++){ const v=Math.random(); x.fillStyle=`rgba(${110+v*130|0},${98+v*120|0},${72+v*100|0},0.06)`; x.fillRect(Math.random()*512,Math.random()*512,2+Math.random()*2,2); }
+      x.strokeStyle='rgba(90,75,50,0.22)'; x.lineWidth=1; for(let k=0;k<10;k++){ let px=Math.random()*512,py=Math.random()*512; x.beginPath(); x.moveTo(px,py); for(let s=0;s<5;s++){ px+=(Math.random()-0.5)*45; py+=(Math.random()-0.5)*45; x.lineTo(px,py);} x.stroke(); }
+      x.strokeStyle=mortar; x.lineWidth=3;
       for(let r=0;r*rh<=512;r++){ const y=r*rh; x.beginPath(); x.moveTo(0,y); x.lineTo(512,y); x.stroke(); const off=(r%2)*70; for(let cx=off;cx<=512;cx+=140){ x.beginPath(); x.moveTo(cx,y); x.lineTo(cx,y+rh); x.stroke(); } }
       const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
     function marble(){ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
@@ -137,11 +139,17 @@
       x.fillStyle='#352b18'; x.font='600 26px Georgia'; x.textAlign='center'; lines.forEach((ln,i)=>x.fillText(ln,256,56+i*40));
       const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
 
-    function mosaic(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'); x.fillStyle='#e9e0c9'; x.fillRect(0,0,256,256);
-      for(let i=0;i<8;i++) for(let j=0;j<8;j++){ x.fillStyle=((i+j)%2)?'#e1d6ba':'#ece4cf'; x.fillRect(i*32+1,j*32+1,30,30); const cx=i*32+16, cy=j*32+16; x.fillStyle='#cbb78d'; x.beginPath(); x.moveTo(cx,cy-6); x.lineTo(cx+6,cy); x.lineTo(cx,cy+6); x.lineTo(cx-6,cy); x.closePath(); x.fill(); }
-      x.strokeStyle='rgba(150,130,95,0.4)'; x.lineWidth=1.5; for(let g=0;g<=256;g+=32){ x.beginPath(); x.moveTo(g,0); x.lineTo(g,256); x.moveTo(0,g); x.lineTo(256,g); x.stroke(); }
+    function mosaic(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'); x.fillStyle='#e4d8bc'; x.fillRect(0,0,256,256);
+      const pal=['#e6dabd','#ddceac','#e9dfc4','#d8c9a2'];
+      for(let i=0;i<8;i++) for(let j=0;j<8;j++){ x.fillStyle=pal[(i*3+j)%pal.length]; x.fillRect(i*32+1,j*32+1,30,30); x.strokeStyle='rgba(150,130,95,0.16)'; x.lineWidth=1; x.beginPath(); x.moveTo(i*32+Math.random()*30,j*32+2); x.lineTo(i*32+Math.random()*30,j*32+28); x.stroke(); const cx=i*32+16, cy=j*32+16; x.fillStyle=((i+j)%2)?'#b9975a':'#caa96a'; x.beginPath(); x.moveTo(cx,cy-7); x.lineTo(cx+7,cy); x.lineTo(cx,cy+7); x.lineTo(cx-7,cy); x.closePath(); x.fill(); }
+      x.strokeStyle='rgba(120,100,70,0.5)'; x.lineWidth=1.5; for(let g=0;g<=256;g+=32){ x.beginPath(); x.moveTo(g,0); x.lineTo(g,256); x.moveTo(0,g); x.lineTo(256,g); x.stroke(); }
       const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
-    const STONE=ashlar('#ece3cd','rgba(120,104,76,0.55)'), MARBLE=marble(), GTEX=goldTexture(), WTEX=waterTex(), MOSAIC=mosaic();
+    function parochesTex(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
+      const g=x.createLinearGradient(0,0,0,256); g.addColorStop(0,'#2b2372'); g.addColorStop(0.5,'#3c3080'); g.addColorStop(1,'#241b5e'); x.fillStyle=g; x.fillRect(0,0,256,256);
+      for(let i=0;i<256;i+=18){ x.fillStyle='rgba(0,0,0,0.14)'; x.fillRect(i,0,4,256); x.fillStyle='rgba(255,255,255,0.06)'; x.fillRect(i+9,0,3,256); }
+      for(let yy=44;yy<256;yy+=88) for(let xx=36;xx<256;xx+=72){ x.strokeStyle='rgba(214,178,60,0.85)'; x.lineWidth=2.5; x.fillStyle='rgba(214,178,60,0.3)'; x.beginPath(); x.moveTo(xx,yy-16); x.lineTo(xx+16,yy); x.lineTo(xx,yy+16); x.lineTo(xx-16,yy); x.closePath(); x.fill(); x.stroke(); }
+      const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
+    const STONE=ashlar('#e7d9bb','rgba(120,104,76,0.5)'), MARBLE=marble(), GTEX=goldTexture(), WTEX=waterTex(), MOSAIC=mosaic(), PAROCHES=parochesTex();
     function stoneMat(w,h,tint){ const t=STONE.clone(); t.needsUpdate=true; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(Math.max(1,w/3.2),Math.max(1,h/3.2)); return new THREE.MeshStandardMaterial({ map:t, color:tint||0xffffff, roughness:.93, metalness:0 }); }
 
     // ============ materials ============
@@ -423,7 +431,8 @@
 
     const gates=[]; let quizGate=null, stars=0, winning=false, mode='younger';
     function makeGate(z,hw,qs){ const H = hw>12?9 : (z<12?5:7); const grp=new THREE.Group();
-      const cur=new THREE.Mesh(new THREE.BoxGeometry(hw*2,H,0.4),new THREE.MeshStandardMaterial({color:0x39307e,emissive:0x2a2270,emissiveIntensity:.55,roughness:.7})); cur.position.y=baseY+H/2; grp.add(cur);
+      const pt=PAROCHES.clone(); pt.needsUpdate=true; pt.wrapS=pt.wrapT=THREE.RepeatWrapping; pt.repeat.set(Math.max(2,Math.round(hw/3)),1);
+      const cur=new THREE.Mesh(new THREE.BoxGeometry(hw*2,H,0.4),new THREE.MeshStandardMaterial({map:pt,color:0xffffff,emissive:0x171043,emissiveIntensity:.22,roughness:.85})); cur.position.y=baseY+H/2; grp.add(cur);
       const fr=new THREE.Mesh(new THREE.BoxGeometry(hw*2+1.4,0.7,0.7),GOLD_B); fr.position.y=baseY+H+0.2; grp.add(fr);
       const orb=new THREE.Mesh(new THREE.SphereGeometry(0.6,16,12),new THREE.MeshBasicMaterial({color:0xffdd66})); orb.position.set(0,baseY+H+1.5,0); grp.add(orb);
       grp.position.z=z; grp.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(grp);
