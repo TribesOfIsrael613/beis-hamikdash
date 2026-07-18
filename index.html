@@ -54,6 +54,7 @@
   #defense .dhpwrap{ width:280px; height:15px; background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.3); border-radius:8px; overflow:hidden; }
   #defense #dhp{ height:100%; width:100%; background:linear-gradient(90deg,#e24b4a,#f2cf66 45%,#5cc060); transition:width .2s; }
   #defense .dsub{ font-size:12px; opacity:.9; }
+  #toast{ position:fixed; top:26%; left:50%; transform:translateX(-50%); z-index:14; font-size:26px; font-weight:600; color:#ffe89a; text-shadow:0 2px 8px rgba(0,0,0,.8); opacity:0; transition:opacity .4s; pointer-events:none; text-align:center; }
 </style>
 </head>
 <body>
@@ -64,6 +65,7 @@
     <div class="dhpwrap"><div id="dhp"></div></div>
     <div class="dsub">Sound the shofar (click) to turn them back! <span id="denemies"></span></div>
   </div>
+  <div id="toast"></div>
   <div id="panel"><h2 id="p-title"></h2><p id="p-body"></p></div>
   <div id="done"><div><h2>🎉 Mazel tov!</h2><p id="done-body"></p><div id="done-btns"></div></div></div>
   <div id="quiz"><div class="qbox"><div id="q-room"></div><div id="q-text"></div><div id="q-opts"></div><div id="q-feed"></div></div></div>
@@ -521,7 +523,8 @@
     const waySign=new THREE.Mesh(new THREE.PlaneGeometry(6,1.6),new THREE.MeshBasicMaterial({map:plaqueTex(['→ Mount of Olives','& the Red Heifer']),side:THREE.DoubleSide})); waySign.position.set(7,baseY+3,100); waySign.rotation.y=Math.PI; scene.add(waySign); box(6.4,2,0.3,7,baseY+3,100.2,stoneMat(6,2,0xd8cdb0));
 
     // ============ DEFENSE MODE — the Levite guard: shield & shofar, no weapons ============
-    let defense=false, wave=0, templeHP=100, blastCD=0, pulseT=0, waveActive=false;
+    let defense=false, wave=0, templeHP=100, blastCD=0, pulseT=0, waveActive=false, waveGap=0, domeFlash=0, toastTimer=0;
+    function toast(text,ms){ const el=document.getElementById('toast'); if(!el)return; el.textContent=text; el.style.opacity='1'; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ el.style.opacity='0'; }, ms||1800); }
     const enemies=[], sparks=[];
     for(let i=0;i<28;i++){ const p=new THREE.Mesh(new THREE.SphereGeometry(0.5,8,8),new THREE.MeshBasicMaterial({color:0xbfe6ff,transparent:true,opacity:0,depthWrite:false})); p.visible=false; scene.add(p); sparks.push({m:p,t:0}); }
     // the shofar, held (first-person)
@@ -543,10 +546,10 @@
       g.position.set(x,baseY,z); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g); return g; }
 
     function spawnWave(){ wave++; const dw=document.getElementById('dwave'); if(dw)dw.textContent='Wave '+wave+' / 3';
-      const n=3+wave*2; for(let i=0;i<n;i++){ const x=(Math.random()-0.5)*56, z=78+Math.random()*20; enemies.push({g:roman(x,z),flee:false}); } waveActive=true; }
+      const n=3+wave*2; for(let i=0;i<n;i++){ const x=(Math.random()-0.5)*56, z=78+Math.random()*20; enemies.push({g:roman(x,z),flee:false}); } waveActive=true; toast('Wave '+wave+' — hold the line! 🛡️'); }
     function startDefense(){ document.getElementById('done').style.display='none'; winning=false; defense=true; templeHP=100; wave=0; enemies.length=0;
       document.getElementById('defense').style.display='flex'; shofar.visible=true; shieldDome.visible=true; readAloud=false; controls.lock(); spawnWave(); }
-    function blast(){ if(blastCD>0)return; blastCD=1.1; pulse.visible=true; pulseT=0.6; pulse.scale.setScalar(1); pulse.position.set(player.position.x,baseY+0.4,player.position.z); pulse.material.opacity=0.7;
+    function blast(){ if(blastCD>0)return; blastCD=1.1; domeFlash=0.3; pulse.visible=true; pulseT=0.6; pulse.scale.setScalar(1); pulse.position.set(player.position.x,baseY+0.4,player.position.z); pulse.material.opacity=0.7;
       if(audio){ try{ const t=audio.ctx.currentTime,o=audio.ctx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(255,t+0.15); const gg=audio.ctx.createGain(); gg.gain.setValueAtTime(0,t); gg.gain.linearRampToValueAtTime(0.16,t+0.05); gg.gain.linearRampToValueAtTime(0,t+0.7); const f=audio.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800; o.connect(f).connect(gg).connect(audio.master); o.start(t); o.stop(t+0.75); }catch(e){} }
       const R2=20*20; for(const e of enemies){ if(!e.g||e.flee)continue; const dx=e.g.position.x-player.position.x, dz=e.g.position.z-player.position.z; if(dx*dx+dz*dz<R2){ e.flee=true;
         for(const s of sparks){ if(!s.m.visible){ s.m.visible=true; s.m.position.set(e.g.position.x,e.g.position.y+1.4,e.g.position.z); s.t=0.5; s.m.material.opacity=0.85; s.m.scale.setScalar(0.5); break; } } } } }
@@ -555,7 +558,7 @@
       document.getElementById('done-body').textContent = win ? '🛡️ You guarded the Beis HaMikdash! The Levite guards turned the legions back with the light of the shofar. The eternal Temple stands. ⭐⭐⭐' : 'The legions pressed too close this time. Take up the shofar and guard again, brave Levite!';
       const bt=document.getElementById('done-btns'); bt.innerHTML=''; const b=document.createElement('button'); b.className='qbtn cont'; b.textContent = win?'Play again 🔁':'Guard again 🛡️';
       b.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; if(win){ resetGame(); controls.lock(); } else startDefense(); };
-      bt.appendChild(b); if(win) speak('You guarded the Holy Temple!'); document.getElementById('done').style.display='flex'; }
+      bt.appendChild(b); if(win){ speak('You guarded the Holy Temple!'); burstConfetti(); } document.getElementById('done').style.display='flex'; }
 
     // ============ stations ============
     const STATIONS=[
@@ -656,18 +659,19 @@
           if(nc){ guideArrow.visible=true; guideArrow.position.set(nc.m.position.x,nc.m.position.y+2.4+Math.sin(now*4)*0.3,nc.m.position.z); } else guideArrow.visible=false; } }
       for(const fl of flames) fl.scale.y=1+Math.sin(now*12+fl.position.x*3)*0.2;
       for(const p of procession){ p.g.position.z-=dt*1.3; p.g.position.y=baseY+Math.abs(Math.sin(now*4+p.off))*0.05; if(p.g.position.z<46)p.g.position.z=66; }
-      blastCD-=dt;
-      if(pulseT>0){ pulseT-=dt; pulse.scale.setScalar(1+(0.6-pulseT)*33); pulse.material.opacity=Math.max(0,pulseT/0.6*0.7); if(pulseT<=0)pulse.visible=false; }
+      blastCD-=dt; if(domeFlash>0)domeFlash-=dt;
+      if(pulseT>0){ pulseT-=dt; pulse.scale.setScalar(1+(0.6-pulseT)*36); pulse.material.opacity=Math.max(0,pulseT/0.6*0.8); if(pulseT<=0)pulse.visible=false; }
       for(const s of sparks){ if(s.t>0){ s.t-=dt; s.m.scale.multiplyScalar(1+2.2*dt); s.m.material.opacity=Math.max(0,s.t/0.5*0.85); if(s.t<=0)s.m.visible=false; } }
       if(defense){ const hp=document.getElementById('dhp'); if(hp)hp.style.width=Math.max(0,templeHP)+'%';
-        shieldDome.material.opacity=0.06+0.12*(templeHP/100)+Math.sin(now*3)*0.02; let adv=0;
+        shieldDome.material.opacity=0.06+0.12*(templeHP/100)+Math.sin(now*3)*0.02+(domeFlash>0?domeFlash*0.6:0); let adv=0;
         for(const e of enemies){ if(!e.g)continue; const g=e.g;
           if(e.flee){ g.position.z+=7*dt; g.position.x+=(g.position.x>=0?1:-1)*2*dt; if(g.position.z>128){ scene.remove(g); e.g=null; } }
           else { adv++; const dx=-g.position.x,dz=40-g.position.z,d=Math.hypot(dx,dz)||1;
             if(d>3){ const sp=(2.3+wave*0.25)*dt; g.position.x+=dx/d*sp; g.position.z+=dz/d*sp; g.rotation.y=Math.atan2(dx,dz); g.position.y=baseY+Math.abs(Math.sin(now*6+g.position.x))*0.05; } else templeHP-=3*dt; } }
         const de=document.getElementById('denemies'); if(de)de.textContent='· 🛡️ '+adv+' advancing';
         if(templeHP<=0) endDefense(false);
-        else if(waveActive && !enemies.some(e=>e.g)){ waveActive=false; if(wave>=3) endDefense(true); else spawnWave(); } }
+        else if(waveActive && !enemies.some(e=>e.g)){ waveActive=false; if(wave>=3){ endDefense(true); } else { waveGap=1.8; toast('Wave cleared! 🎉'); } }
+        else if(!waveActive && waveGap>0){ waveGap-=dt; if(waveGap<=0) spawnWave(); } }
       if(confettiT>0){ confettiT-=dt; for(const c of confetti){ c.vy-=15*dt; c.m.position.x+=c.vx*dt; c.m.position.y+=c.vy*dt; c.m.position.z+=c.vz*dt; c.m.rotation.x+=dt*6; c.m.rotation.y+=dt*5; if(confettiT<=0)c.m.visible=false; } }
       renderer.render(scene,camera);
     }
