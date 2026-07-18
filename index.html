@@ -102,7 +102,7 @@
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.85;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.02;
     document.body.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -152,11 +152,11 @@
     const STONE=ashlar('#e7d9bb','rgba(120,104,76,0.5)'), MARBLE=marble(), GTEX=goldTexture(), WTEX=waterTex(), MOSAIC=mosaic(), PAROCHES=parochesTex();
     const texLoader=new THREE.TextureLoader();
     function ltex(u,srgb){ const t=texLoader.load(u); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; if(srgb)t.colorSpace=THREE.SRGBColorSpace; return t; }
-    const SAND_D=ltex('./vendor/tex/sandstone_d.jpg',true), SAND_N=ltex('./vendor/tex/sandstone_n.jpg'), SAND_R=ltex('./vendor/tex/sandstone_r.jpg');
+    const SAND_D=ltex('./vendor/tex/jstone_d.jpg',true), SAND_N=ltex('./vendor/tex/jstone_n.jpg'), SAND_R=ltex('./vendor/tex/jstone_r.jpg');
     const MARB_D=ltex('./vendor/tex/marble_d.jpg',true), MARB_N=ltex('./vendor/tex/marble_n.jpg'), MARB_R=ltex('./vendor/tex/marble_r.jpg');
-    const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:SAND_D, normalMap:SAND_N, roughnessMap:SAND_R, color:0xe4d3ad, metalness:0, normalScale:new THREE.Vector2(0.8,0.8) });
+    const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:SAND_D, normalMap:SAND_N, roughnessMap:SAND_R, color:0xffedcf, metalness:0, roughness:0.85, normalScale:new THREE.Vector2(0.6,0.6) });
     const MARBLE_TEX_MAT=new THREE.MeshStandardMaterial({ map:MARB_D, normalMap:MARB_N, roughnessMap:MARB_R, metalness:0, normalScale:new THREE.Vector2(0.35,0.35) });
-    const TILE=4.5;
+    const TILE=8;
     function stoneMat(w,h,tint){ return SANDSTONE_MAT; }
 
     // ============ materials ============
@@ -187,8 +187,8 @@
       const ssun=new THREE.Mesh(new THREE.SphereGeometry(7,12,12), new THREE.MeshBasicMaterial({color:0xfff2d0})); ssun.position.set(22,26,16); es.add(ssun);
       scene.environment=pmrem.fromScene(es,0.05).texture; pmrem.dispose();
     }catch(e){ console.warn('env map unavailable',e); }
-    const hemi=new THREE.HemisphereLight(0xc2d4ff,0x6f5d3c,0.5); scene.add(hemi);
-    const amb=new THREE.AmbientLight(0x3a3326,0.5); scene.add(amb);
+    const hemi=new THREE.HemisphereLight(0xdfe4ee,0x9a7a49,0.5); scene.add(hemi);
+    const amb=new THREE.AmbientLight(0x4a4030,0.5); scene.add(amb);
     const sun=new THREE.DirectionalLight(0xffdfa0,2.2); sun.position.set(75,100,140); sun.castShadow=true;
     sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.near=1; sun.shadow.camera.far=420;
     sun.shadow.camera.left=-80; sun.shadow.camera.right=80; sun.shadow.camera.top=110; sun.shadow.camera.bottom=-60; sun.shadow.bias=-0.0003; sun.shadow.camera.updateProjectionMatrix();
@@ -712,7 +712,7 @@
       const day=Math.max(0,Math.min(1,sh*2+0.3)), night=Math.max(0,Math.min(1,-sh*2-0.1));
       sun.intensity=0.15+day*2.1; sun.color.setRGB(1,0.78+day*0.16,0.55+day*0.35);
       sun.position.set(120*Math.cos(sa),Math.max(8,90*sh+20),120*Math.sin(sa)+40);
-      hemi.intensity=0.1+day*0.4; amb.intensity=0.12+day*0.28;
+      hemi.intensity=0.2+day*0.5; amb.intensity=0.2+day*0.32;
       const sky=0.16+day*0.86; skyMat.color.setRGB(sky*0.95,sky*0.97,Math.min(1,sky*1.05+night*0.14));
       fogCol.setRGB(0.10+day*0.78,0.12+day*0.71,0.20+day*0.49); scene.fog.color.copy(fogCol);
       starMat.opacity=night*0.9; moon.visible=night>0.04;
