@@ -11,10 +11,9 @@ Built with [three.js](https://threejs.org). Modeled on the future Temple as desc
 the altar, the Menorah and the vessels, the Kohen Gadol before the Aron, and more.
 
 ## Controls
-- **Walk:** W A S D or the arrow keys · **Look:** mouse
-- **Answer** the question at each glowing gate to open it · **Collect** the golden coins
-- Reach the **Holy of Holies** to win
-- **M** mute · **V** toggle read‑aloud voice · **T** free‑roam tour
+- **Computer** — **Walk:** W A S D / arrow keys · **Look:** mouse · **M** mute · **V** read‑aloud voice · **T** free‑roam tour
+- **Phone / tablet** — tap an age button to start · **left side** of the screen is a walk stick · **drag the right side** to look · **tap** the answers · in the guard phase, tap **Sound the shofar**
+- **Answer** the question at each glowing gate to open it · **Collect** the golden coins · reach the **Holy of Holies** to win
 
 ## Run locally
 ```
