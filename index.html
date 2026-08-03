@@ -109,7 +109,8 @@
       <button class="modebtn" id="m-old">🧑 Ages 7–12<span>multiple choice</span></button>
       <button class="modebtn" id="m-adult">🎓 Teens &amp; Adults<span>harder · real sources · tougher guard</span></button>
     </div>
-    <p class="keys" style="margin-top:14px">…or click anywhere to start</p>
+    <p class="keys desk" style="margin-top:14px">…or click anywhere to start</p>
+    <button id="shareBtn" class="cta" style="margin-top:16px; background:transparent; font:inherit; cursor:pointer;">🔗 Share this game</button>
   </div>
 
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
@@ -760,6 +761,9 @@
       if(my) my.onclick=(e)=>{ e.stopPropagation(); beginGame('younger'); };
       if(mo) mo.onclick=(e)=>{ e.stopPropagation(); beginGame('older'); };
       if(ma) ma.onclick=(e)=>{ e.stopPropagation(); beginGame('adult'); }; }
+    { const sb=document.getElementById('shareBtn'), SHARE_URL='https://tribesofisrael613.github.io/beis-hamikdash/';
+      if(sb) sb.onclick=async(e)=>{ e.stopPropagation(); const d={title:'The Beis HaMikdash',text:'Walk the Holy Temple of Jerusalem — a free learning game!',url:SHARE_URL};
+        try{ if(navigator.share){ await navigator.share(d); } else if(navigator.clipboard){ await navigator.clipboard.writeText(SHARE_URL); toast('Link copied! 🔗'); } else { toast(SHARE_URL); } }catch(err){} }; }
     const move={f:false,b:false,l:false,r:false};
     let tour=false,tourIdx=0,tourWait=0;
     const set=(e,v)=>{ if(e.target&&e.target.tagName==='INPUT')return; const k=e.code; if(k==='KeyW'||k==='ArrowUp')move.f=v; else if(k==='KeyS'||k==='ArrowDown')move.b=v; else if(k==='KeyA'||k==='ArrowLeft')move.l=v; else if(k==='KeyD'||k==='ArrowRight')move.r=v; else if(k==='KeyM'&&v)toggleMute(); else if(k==='KeyV'&&v)readAloud=!readAloud; else if(k==='KeyT'&&v){ tour=!tour; tourWait=0; } };
