@@ -78,6 +78,9 @@
   #shofarBtn{ position:absolute; right:20px; bottom:32px; padding:15px 20px; border-radius:16px; background:rgba(234,185,63,.94); color:#3a2a08; font:600 17px/1 system-ui,sans-serif; border:none; pointer-events:auto; display:none; }
   body.touch #shofarBtn.on{ display:block; }
   .mob{ display:none; } body.touch .mob{ display:block; } body.touch .desk{ display:none; }
+  .qrbox{ margin-top:18px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .qrbox img{ width:118px; height:118px; border-radius:10px; background:#fff; padding:7px; box-shadow:0 4px 16px rgba(0,0,0,.4); }
+  .qrbox span{ font-size:12px; opacity:.72; letter-spacing:.02em; }
 </style>
 </head>
 <body>
@@ -91,7 +94,7 @@
   <div id="toast"></div>
   <div id="panel"><h2 id="p-title"></h2><p id="p-body"></p></div>
   <div id="tctl"><div id="joy"><div id="joyknob"></div></div><button id="shofarBtn">🔔 Sound the shofar</button></div>
-  <div id="done"><div><h2>🎉 Mazel tov!</h2><p id="done-body"></p><div id="done-btns"></div></div></div>
+  <div id="done"><div><h2>🎉 Mazel tov!</h2><p id="done-body"></p><div id="done-btns"></div><div class="qrbox"><img src="qr.svg" width="104" height="104" alt="QR code — scan to play"><span>📱 Scan to challenge a friend</span></div></div></div>
   <div id="quiz"><div class="qbox"><div id="q-room"></div><div id="q-text"></div><div id="q-opts"></div><div id="q-feed"></div></div></div>
   <div id="overlay">
     <h1>The Beis HaMikdash</h1>
@@ -111,6 +114,7 @@
     </div>
     <p class="keys desk" style="margin-top:14px">…or click anywhere to start</p>
     <button id="shareBtn" class="cta" style="margin-top:16px; background:transparent; font:inherit; cursor:pointer;">🔗 Share this game</button>
+    <div class="qrbox desk"><img src="qr.svg" width="118" height="118" alt="QR code — scan to play"><span>📱 Scan to play on your phone</span></div>
   </div>
 
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
