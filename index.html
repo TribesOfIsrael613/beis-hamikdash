@@ -2,8 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>The Beis HaMikdash — walk the Holy Temple</title>
+<meta name="description" content="A free 3D learning adventure — walk the Holy Temple of Jerusalem (Beis HaMikdash), answer a question at each glowing gate, and reach the Holy of Holies. Plays right in your browser on any phone or computer.">
+<meta name="theme-color" content="#1a2f6b">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tribesofisrael613.github.io/beis-hamikdash/">
+<meta property="og:title" content="The Beis HaMikdash — Walk the Holy Temple">
+<meta property="og:description" content="A free 3D learning adventure: explore the Holy Temple of Jerusalem, answer at each glowing gate, and reach the Holy of Holies. Plays on any phone or computer.">
+<meta property="og:image" content="https://tribesofisrael613.github.io/beis-hamikdash/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Beis HaMikdash — Walk the Holy Temple">
+<meta name="twitter:description" content="A free 3D learning adventure through the Holy Temple of Jerusalem. Plays on any phone or computer.">
+<meta name="twitter:image" content="https://tribesofisrael613.github.io/beis-hamikdash/share.jpg">
 <style>
   :root{ --gold:#eab93f; }
   *{ box-sizing:border-box; }
@@ -19,6 +32,8 @@
   #overlay .keys{ margin-top:1.5em; opacity:.6; font-size:13px; }
   #hud{ position:fixed; top:14px; left:16px; z-index:10; font-size:13px; opacity:.85; text-shadow:0 1px 3px rgba(0,0,0,.85); }
   #hud .count{ color:var(--gold); }
+  #snd{ cursor:pointer; padding:2px 5px; border-radius:6px; }
+  body.touch #snd{ background:rgba(255,255,255,.10); }
   #crosshair{ position:fixed; left:50%; top:50%; width:5px; height:5px; margin:-2.5px 0 0 -2.5px;
     border-radius:50%; background:rgba(255,255,255,.55); z-index:10; pointer-events:none; }
   #panel{ position:fixed; left:50%; bottom:7%; transform:translateX(-50%); z-index:10;
@@ -106,10 +121,13 @@
     import { UnrealBloomPass } from './vendor/jsm/postprocessing/UnrealBloomPass.js';
     import { OutputPass } from './vendor/jsm/postprocessing/OutputPass.js';
 
+    // touch/low-power device? (drives mobile controls AND adaptive render quality)
+    const IS_TOUCH = matchMedia('(pointer:coarse)').matches || ('ontouchstart' in window) || location.search.includes('touch');
+
     // ============ renderer / scene ============
-    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    const renderer = new THREE.WebGLRenderer({ antialias:!IS_TOUCH, powerPreference:'high-performance' });
     renderer.setSize(innerWidth, innerHeight);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio, IS_TOUCH?1.5:2));
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.02;
@@ -236,7 +254,7 @@
     const hemi=new THREE.HemisphereLight(0xdfe4ee,0x9a7a49,0.5); scene.add(hemi);
     const amb=new THREE.AmbientLight(0x4a4030,0.5); scene.add(amb);
     const sun=new THREE.DirectionalLight(0xffdfa0,2.2); sun.position.set(75,100,140); sun.castShadow=true;
-    sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.near=1; sun.shadow.camera.far=420;
+    sun.shadow.mapSize.set(IS_TOUCH?1024:2048,IS_TOUCH?1024:2048); sun.shadow.camera.near=1; sun.shadow.camera.far=420;
     sun.shadow.camera.left=-80; sun.shadow.camera.right=80; sun.shadow.camera.top=110; sun.shadow.camera.bottom=-60; sun.shadow.bias=-0.0003; sun.shadow.camera.updateProjectionMatrix();
     sun.target.position.set(0,12,18); scene.add(sun); scene.add(sun.target);
 
@@ -727,8 +745,7 @@
     // ============ controls ============
     const controls=new PointerLockControls(camera,document.body); const player=controls.getObject?controls.getObject():controls.object; scene.add(player);
     const EYE=1.7; player.position.set(0,baseY+EYE,96);
-    // ---- touch / mobile support (so the shared link plays on phones) ----
-    const IS_TOUCH = matchMedia('(pointer:coarse)').matches || ('ontouchstart' in window) || location.search.includes('touch');
+    // ---- touch / mobile support (so the shared link plays on phones); IS_TOUCH defined up top ----
     if(IS_TOUCH) document.body.classList.add('touch');
     let touchActive=false; const touchMove={x:0,y:0};
     const _lookE=new THREE.Euler(0,0,0,'YXZ');
@@ -749,6 +766,7 @@
     addEventListener('keydown',e=>set(e,true)); addEventListener('keyup',e=>set(e,false));
     addEventListener('mousedown',()=>{ if(defense && controls.isLocked) blast(); });
     addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight); });
+    { const sndEl=document.getElementById('snd'); if(sndEl) sndEl.addEventListener('click',(e)=>{ e.stopPropagation(); toggleMute(); }); }
     // ---- touch input: left side = walk (virtual stick), right side = look; tap answers via DOM ----
     if(IS_TOUCH){
       const joy=document.getElementById('joy'), knob=document.getElementById('joyknob'), shofarBtn=document.getElementById('shofarBtn');
