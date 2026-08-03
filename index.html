@@ -359,6 +359,38 @@
       for(const sx of [-1,1]) box(1.1, 30, 0.5, sx*(HW-0.5), baseY+15, FRONT_Z-0.5, GW, {noCast:true});   // entrance jambs
       for(const sx of [-1,1]) box(5, 30, 0.25, sx*6.5, baseY+15, 10.15, GW, {noCast:true});               // KHK partition wall, gilded, flanking the paroches
     })();
+    // carved gold reliefs on the Heichal walls — cherubim, palm trees & open flowers (Melachim I 6:29; Yechezkel 41:18)
+    (function(){ const gm=new THREE.MeshStandardMaterial({ map:GTEX, color:0xecca66, metalness:.85, roughness:.4, emissive:0x2c1f06, emissiveIntensity:.16 });
+      const XW=8.55;
+      function timora(sx,z,y){ const g=new THREE.Group();
+        const trunk=new THREE.Mesh(new THREE.BoxGeometry(0.32,5,0.75),gm); trunk.position.y=2.5; g.add(trunk);
+        for(let i=0;i<4;i++){ const r=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.16,0.92),gm); r.position.y=0.9+i*1.05; g.add(r); }
+        const top=new THREE.Group(); top.position.y=4.9;
+        for(let f=-3;f<=3;f++){ const h=new THREE.Group(); const fr=new THREE.Mesh(new THREE.BoxGeometry(0.15,2.2,0.42),gm); fr.position.y=1.1; h.add(fr); h.rotation.x=f*0.3; top.add(h); }
+        g.add(top); g.position.set(sx*XW,y,z); g.rotation.y=sx>0?0:Math.PI; scene.add(g); }
+      function keruv(sx,z,y){ const g=new THREE.Group();
+        const body=new THREE.Mesh(new THREE.BoxGeometry(0.3,1.7,0.7),gm); g.add(body);
+        const head=new THREE.Mesh(new THREE.SphereGeometry(0.36,12,10),gm); head.position.y=1.15; g.add(head);
+        for(const s of [1,-1]){ const w=new THREE.Mesh(new THREE.BoxGeometry(0.2,1.4,0.55),gm); w.position.set(0,0.55,s*0.82); w.rotation.x=s*0.5; g.add(w);
+          const w2=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.95,0.4),gm); w2.position.set(0,-0.35,s*0.7); w2.rotation.x=s*0.95; g.add(w2); }
+        g.position.set(sx*XW,y,z); g.rotation.y=sx>0?0:Math.PI; scene.add(g); }
+      function flower(sx,z,y){ const g=new THREE.Group();
+        const c=new THREE.Mesh(new THREE.SphereGeometry(0.26,12,10),gm); g.add(c);
+        for(let p=0;p<8;p++){ const a=p/8*Math.PI*2; const pt=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.6,0.28),gm); pt.position.set(0,Math.cos(a)*0.48,Math.sin(a)*0.48); pt.rotation.x=a; g.add(pt); }
+        g.position.set(sx*XW,y,z); scene.add(g); }
+      for(const sx of [-1,1]){ let palm=true;
+        for(let z=12.5; z<=31; z+=4.6){ if(palm) timora(sx,z,baseY+9); else keruv(sx,z,baseY+11.2); palm=!palm; }
+        for(let z=14.8; z<=29; z+=4.6) flower(sx,z,baseY+16.5);
+      }
+    })();
+    // the Holy of Holies (Kodesh haKodashim) overlaid with pure gold (Melachim I 6:20) — revealed when the last paroches opens
+    (function(){ const GK=new THREE.MeshStandardMaterial({ map:GTEX, color:0xf3d67e, metalness:.88, roughness:.42, envMapIntensity:.9, emissive:0x3a2807, emissiveIntensity:.2 });
+      const zc=(REAR_Z+9.5)/2, zd=9.5-REAR_Z;
+      box(0.3, 28, zd, HW-0.1, baseY+14, zc, GK, {noCast:true});           // north wall
+      box(0.3, 28, zd, -(HW-0.1), baseY+14, zc, GK, {noCast:true});        // south wall
+      box(HW*2, 28, 0.3, 0, baseY+14, REAR_Z+0.75, GK, {noCast:true});     // rear (western) wall
+      box(HW*2, 0.3, zd, 0, baseY+27.9, zc, GK, {noCast:true});            // ceiling
+    })();
 
     // ============ Kiyor ============
     (function(){ const g=new THREE.Group(); const st=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,1.4,16),bronze); st.position.y=0.7;
