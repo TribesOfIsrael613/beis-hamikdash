@@ -755,7 +755,7 @@
     const overlay=document.getElementById('overlay');
     overlay.addEventListener('click',()=>{ if(!IS_TOUCH) controls.lock(); });
     controls.addEventListener('lock',()=>{ overlay.style.display='none'; startAudio(); });
-    controls.addEventListener('unlock',()=>{ if(quizGate||winning) return; overlay.style.display='flex'; });
+    controls.addEventListener('unlock',()=>{ if(quizGate||winning||defense||touchActive) return; overlay.style.display='flex'; });
     const beginGame=(m)=>{ mode=m; readAloud=(m==='younger'); if(IS_TOUCH){ overlay.style.display='none'; startAudio(); touchActive=true; document.getElementById('tctl').classList.add('on'); } else { controls.lock(); } };
     { const my=document.getElementById('m-young'), mo=document.getElementById('m-old'), ma=document.getElementById('m-adult');
       if(my) my.onclick=(e)=>{ e.stopPropagation(); beginGame('younger'); };
