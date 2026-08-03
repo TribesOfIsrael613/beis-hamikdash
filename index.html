@@ -326,6 +326,31 @@
     for(let cx=-5;cx<=5;cx+=2.5){ const ch=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,7,6),GOLD_B); ch.position.set(cx,baseY+D_TOP-3.5,FZ-1.6); scene.add(ch); const cr=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.08,8,16),GOLD_B); cr.position.set(cx,baseY+D_TOP-7.2,FZ-1.6); cr.rotation.x=Math.PI/2; scene.add(cr); }
     box(1.8,0.8,99,-37,baseY+8.4,35,GOLD,{noCast:true}); box(1.8,0.8,99,37,baseY+8.4,35,GOLD,{noCast:true});
 
+    // ============ side chambers — the ta'im / tzela'os wrapping the Heichal (Yechezkel 41; Middos 4:3) ============
+    (function(){
+      const TD=4.2, OX=HW+0.7+TD, OZ=REAR_Z-TD, TH=22;                              // depth, outer x, outer z(west), height
+      const smat=()=>stoneMat(2,TH);
+      box(1.3, TH, FRONT_Z-OZ, OX, baseY+TH/2, (FRONT_Z+OZ)/2, smat());             // north outer wall
+      box(1.3, TH, FRONT_Z-OZ, -OX, baseY+TH/2, (FRONT_Z+OZ)/2, smat());            // south outer wall
+      box(OX*2+1.3, TH, 1.3, 0, baseY+TH/2, OZ, smat());                            // west outer wall
+      const winMat=new THREE.MeshStandardMaterial({color:0x3a2e1d,roughness:1});
+      for(let s=0;s<3;s++){                                                         // three storeys of cells
+        const ly=baseY+(s+1)*(TH/3);                                                // gold string-course above each storey
+        for(const sx of [-1,1]) box(1.1,0.45,FRONT_Z-OZ+0.4, sx*OX, ly, (FRONT_Z+OZ)/2, GOLD_B,{noCast:true});
+        box(OX*2+2.2,0.45,1.1, 0, ly, OZ, GOLD_B,{noCast:true});
+        const wy=baseY+(s+0.5)*(TH/3);                                              // a row of cell windows per storey
+        for(let z=OZ+6; z<FRONT_Z-4; z+=6.6){ box(0.25,1.7,1.1, OX+0.65, wy, z, winMat,{noCast:true}); box(0.25,1.7,1.1, -(OX+0.65), wy, z, winMat,{noCast:true}); }
+        for(let x=-OX+6; x<OX-4; x+=6.6) box(1.1,1.7,0.25, x, wy, OZ-0.65, winMat,{noCast:true});
+      }
+      const rc=(FRONT_Z+OZ)/2, rd=FRONT_Z-OZ;                                       // chamber roof (a ring; the Sanctuary rises above)
+      for(const sx of [-1,1]) box(TD+1.4,1.1,rd, sx*(HW+0.7+TD/2+0.35), baseY+TH+0.55, rc, smat(),{noCast:true});
+      box(OX*2+1.3, 1.1, TD+1.4, 0, baseY+TH+0.55, OZ+TD/2+0.35, smat(),{noCast:true});
+    })();
+    // Heichal clerestory windows above the ta'im roof (Melachim I 6:4)
+    (function(){ const wmat=new THREE.MeshStandardMaterial({color:0x3a2e1d,roughness:1});
+      for(let z=12.5; z<=29; z+=5.5){ for(const sx of [-1,1]) box(0.3,3.2,1.3, sx*(HW+1.35), baseY+27.2, z, wmat, {noCast:true}); }
+    })();
+
     // ============ Kiyor ============
     (function(){ const g=new THREE.Group(); const st=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,1.4,16),bronze); st.position.y=0.7;
       const bs=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.0,0.9,20),GOLD); bs.position.y=1.7;
