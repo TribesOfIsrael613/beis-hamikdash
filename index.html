@@ -391,6 +391,12 @@
       box(HW*2, 28, 0.3, 0, baseY+14, REAR_Z+0.75, GK, {noCast:true});     // rear (western) wall
       box(HW*2, 0.3, zd, 0, baseY+27.9, zc, GK, {noCast:true});            // ceiling
     })();
+    // warm light within the gilded Sanctuary so the gold glows (the Menorah, the ner tamid, the Shechina)
+    (function(){
+      const h1=new THREE.PointLight(0xffdca2,1.7,30,2); h1.position.set(0,baseY+13,21); scene.add(h1);   // Heichal center
+      const h2=new THREE.PointLight(0xffd490,1.1,24,2); h2.position.set(0,baseY+8,30); scene.add(h2);     // near the entrance
+      const k1=new THREE.PointLight(0xffe7b4,1.6,22,2); k1.position.set(0,baseY+7,3.5); scene.add(k1);    // Holy of Holies glow
+    })();
     // the Golden Vine (Gefen Zahav) over the entrance — donors hung gold grapes, leaves & clusters until it grew huge (Middos 3:8)
     (function(){ const g=new THREE.Group(); const yTop=baseY+D_TOP+2, z=FZ+1.4;
       const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,15,10),GOLD_B); beam.rotation.z=Math.PI/2; beam.position.set(0,yTop,z); g.add(beam);
