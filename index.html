@@ -524,14 +524,19 @@
         const hook=new THREE.Mesh(new THREE.TorusGeometry(0.16,0.04,6,12,Math.PI*1.4),bronze); hook.position.set(nx+9,baseY+2.5,nz+i*2.2+0.2); hook.rotation.x=Math.PI/2; scene.add(hook); } })();
 
     // ============ vessels in the Heichal ============
-    function menorah(x,z){ const g=new THREE.Group(); const base=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.85,0.6,16),GOLD_B); base.position.y=0.3; g.add(base);
-      const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,3.1,12),GOLD_B); shaft.position.y=1.75; g.add(shaft);
-      for(const ky of [0.85,1.4,1.95,2.5,3.0]){ const k=new THREE.Mesh(new THREE.SphereGeometry(0.15,12,10),GOLD_B); k.position.y=ky; g.add(k); }
-      for(const r of [0.62,1.24,1.86]) for(const s of [1,-1]){ const arc=new THREE.Mesh(new THREE.TorusGeometry(r,0.09,8,24,Math.PI),GOLD_B); arc.position.set(s*r,1.5,0); arc.rotation.z=s>0?0:Math.PI; arc.scale.y=1.25; g.add(arc);
-        const knob=new THREE.Mesh(new THREE.SphereGeometry(0.12,10,8),GOLD_B); knob.position.set(s*r*0.5,2.05,0); g.add(knob);}
-      for(let i=-3;i<=3;i++){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.1,0.24,12),GOLD_B); cup.position.set(i*0.62,3.15,0); g.add(cup); const fl=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.32,8),new THREE.MeshBasicMaterial({color:0xffd27a})); fl.position.set(i*0.62,3.42,0); g.add(fl); flames.push(fl);}
+    function menorah(x,z){ const g=new THREE.Group(); const YT=3.2, d=0.62;
+      const base=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.92,0.4,20),GOLD_B); base.position.y=0.2; g.add(base);
+      const foot=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.26,0.5,14),GOLD_B); foot.position.y=0.55; g.add(foot);
+      const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.15,YT-0.7,16),GOLD_B); shaft.position.y=0.7+(YT-0.7)/2; g.add(shaft);
+      for(const ky of [1.1,1.75,2.4]){ const k=new THREE.Mesh(new THREE.SphereGeometry(0.15,12,10),GOLD_B); k.scale.y=1.3; k.position.y=ky; g.add(k); }          // kaftorim (knobs) on the shaft
+      for(let kk=1;kk<=3;kk++){ const r=kk*d;                                                                                                                    // 3 pairs of branches = concentric semicircles rising from the shaft to the lamps
+        const arc=new THREE.Mesh(new THREE.TorusGeometry(r,0.07,8,40,Math.PI),GOLD_B); arc.rotation.z=Math.PI; arc.position.set(0,YT,0); g.add(arc);
+        for(const s of [-1,1]){ const kn=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,8),GOLD_B); kn.position.set(s*r,YT,0); g.add(kn); } }
+      for(let i=-3;i<=3;i++){ const cx=i*d;                                                                                                                      // the seven lamps in a straight row
+        const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.08,0.22,12),GOLD_B); cup.position.set(cx,YT+0.11,0); g.add(cup);
+        const fl=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.34,8),new THREE.MeshBasicMaterial({color:0xffd27a})); fl.position.set(cx,YT+0.42,0); g.add(fl); flames.push(fl); }
       g.position.set(x,baseY,z); g.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(g);
-      const lp=new THREE.PointLight(0xffd986,1.2,16,2); lp.position.set(x,baseY+3.4,z); scene.add(lp); }
+      const lp=new THREE.PointLight(0xffd986,1.3,16,2); lp.position.set(x,baseY+YT+0.4,z); scene.add(lp); }
     menorah(-3.4,18);
     (function(){ const g=new THREE.Group(); const top=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.18,1.0),GOLD_B); top.position.y=1.5;
       [[-0.85,-0.4],[0.85,-0.4],[-0.85,0.4],[0.85,0.4]].forEach(([lx,lz])=>{ const l=new THREE.Mesh(new THREE.BoxGeometry(0.14,1.5,0.14),GOLD_B); l.position.set(lx,0.75,lz); g.add(l);}); g.add(top);
