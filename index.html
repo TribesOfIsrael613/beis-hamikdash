@@ -528,10 +528,12 @@
       const base=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.92,0.4,20),GOLD_B); base.position.y=0.2; g.add(base);
       const foot=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.26,0.5,14),GOLD_B); foot.position.y=0.55; g.add(foot);
       const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.15,YT-0.7,16),GOLD_B); shaft.position.y=0.7+(YT-0.7)/2; g.add(shaft);
-      for(const ky of [1.1,1.75,2.4]){ const k=new THREE.Mesh(new THREE.SphereGeometry(0.15,12,10),GOLD_B); k.scale.y=1.3; k.position.y=ky; g.add(k); }          // kaftorim (knobs) on the shaft
-      for(let kk=1;kk<=3;kk++){ const r=kk*d;                                                                                                                    // 3 pairs of branches = concentric semicircles rising from the shaft to the lamps
-        const arc=new THREE.Mesh(new THREE.TorusGeometry(r,0.07,8,40,Math.PI),GOLD_B); arc.rotation.z=Math.PI; arc.position.set(0,YT,0); g.add(arc);
-        for(const s of [-1,1]){ const kn=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,8),GOLD_B); kn.position.set(s*r,YT,0); g.add(kn); } }
+      for(const ky of [1.15,1.8,2.45]){ const k=new THREE.Mesh(new THREE.SphereGeometry(0.15,12,10),GOLD_B); k.scale.y=1.3; k.position.y=ky; g.add(k); }        // kaftorim (knobs) on the shaft
+      const _up=new THREE.Vector3(0,1,0), slope=(YT-0.9)/(3*d);                                                                                                   // 3 pairs of STRAIGHT diagonal branches (Rambam & Rashi) rising to the lamps
+      for(let kk=1;kk<=3;kk++){ const r=kk*d, startY=YT-r*slope;
+        for(const s of [-1,1]){ const P0=new THREE.Vector3(0,startY,0), P1=new THREE.Vector3(s*r,YT,0), dir=new THREE.Vector3().subVectors(P1,P0), len=dir.length();
+          const arm=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,len,10),GOLD_B); arm.position.copy(P0).addScaledVector(dir,0.5); arm.quaternion.setFromUnitVectors(_up,dir.clone().normalize()); g.add(arm);
+          const kn=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,8),GOLD_B); kn.scale.set(1,1.25,1); kn.position.copy(P0).addScaledVector(dir,0.5); g.add(kn); } }                    // a g'via/kaftor midway on each branch
       for(let i=-3;i<=3;i++){ const cx=i*d;                                                                                                                      // the seven lamps in a straight row
         const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.08,0.22,12),GOLD_B); cup.position.set(cx,YT+0.11,0); g.add(cup);
         const fl=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.34,8),new THREE.MeshBasicMaterial({color:0xffd27a})); fl.position.set(cx,YT+0.42,0); g.add(fl); flames.push(fl); }
