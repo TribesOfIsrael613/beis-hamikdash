@@ -135,14 +135,14 @@
     renderer.setPixelRatio(Math.min(devicePixelRatio, IS_TOUCH?1.5:2));
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.02;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.96;
     document.body.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 2000);
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.55, 0.78);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.26, 0.5, 0.86);
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
 
@@ -178,7 +178,7 @@
       x.strokeStyle='rgba(120,100,70,0.5)'; x.lineWidth=1.5; for(let g=0;g<=256;g+=32){ x.beginPath(); x.moveTo(g,0); x.lineTo(g,256); x.moveTo(0,g); x.lineTo(256,g); x.stroke(); }
       const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
     function parochesTex(){ const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
-      const g=x.createLinearGradient(0,0,0,256); g.addColorStop(0,'#2b2372'); g.addColorStop(0.5,'#3c3080'); g.addColorStop(1,'#241b5e'); x.fillStyle=g; x.fillRect(0,0,256,256);
+      const g=x.createLinearGradient(0,0,0,256); g.addColorStop(0,'#1b1746'); g.addColorStop(0.5,'#242058'); g.addColorStop(1,'#14113a'); x.fillStyle=g; x.fillRect(0,0,256,256);
       for(let i=0;i<256;i+=18){ x.fillStyle='rgba(0,0,0,0.14)'; x.fillRect(i,0,4,256); x.fillStyle='rgba(255,255,255,0.06)'; x.fillRect(i+9,0,3,256); }
       for(let yy=44;yy<256;yy+=88) for(let xx=36;xx<256;xx+=72){ x.strokeStyle='rgba(214,178,60,0.85)'; x.lineWidth=2.5; x.fillStyle='rgba(214,178,60,0.3)'; x.beginPath(); x.moveTo(xx,yy-16); x.lineTo(xx+16,yy); x.lineTo(xx,yy+16); x.lineTo(xx-16,yy); x.closePath(); x.fill(); x.stroke(); }
       const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace; return t; }
@@ -195,9 +195,9 @@
         const bxp=x0+marg, byp=y0+marg, bwp=w-2*marg, bhp=h-2*marg;
         x.fillStyle=col(1); x.fillRect(bxp,byp,bwp,bhp);                              // raised central boss (the panel)
         x.lineWidth=Math.max(3,marg*0.55);
-        x.strokeStyle='rgba(255,245,212,0.42)'; x.beginPath(); x.moveTo(bxp,byp+bhp); x.lineTo(bxp,byp); x.lineTo(bxp+bwp,byp); x.stroke();      // boss lit top+left (warm, soft)
-        x.strokeStyle='rgba(52,38,20,0.5)'; x.beginPath(); x.moveTo(bxp+bwp,byp); x.lineTo(bxp+bwp,byp+bhp); x.lineTo(bxp,byp+bhp); x.stroke();  // boss shadowed bottom+right
-        x.strokeStyle='rgba(255,247,222,0.22)'; x.lineWidth=2; x.beginPath(); x.moveTo(x0,y0+h); x.lineTo(x0,y0); x.lineTo(x0+w,y0); x.stroke();  // outer stone edge catches sun
+        x.strokeStyle='rgba(255,245,212,0.24)'; x.beginPath(); x.moveTo(bxp,byp+bhp); x.lineTo(bxp,byp); x.lineTo(bxp+bwp,byp); x.stroke();      // boss lit top+left (soft)
+        x.strokeStyle='rgba(52,38,20,0.3)'; x.beginPath(); x.moveTo(bxp+bwp,byp); x.lineTo(bxp+bwp,byp+bhp); x.lineTo(bxp,byp+bhp); x.stroke();  // boss shadowed bottom+right
+        x.strokeStyle='rgba(255,247,222,0.12)'; x.lineWidth=2; x.beginPath(); x.moveTo(x0,y0+h); x.lineTo(x0,y0); x.lineTo(x0+w,y0); x.stroke();  // outer stone edge catches sun
         x.save(); x.beginPath(); x.rect(bxp,byp,bwp,bhp); x.clip();                   // fine chisel striations + pockmarks (deterministic)
         for(let i=0;i<40;i++){ const h1=hash(r*40+i,j,3), h2=hash(r,j*40+i,4); const cx=bxp+h1*bwp, cy=byp+h2*bhp; x.strokeStyle=(hash(i,r+j,5)<0.5)?'rgba(255,250,230,0.045)':'rgba(58,44,26,0.05)'; x.lineWidth=1; x.beginPath(); x.moveTo(cx,cy); x.lineTo(cx+5+h1*9,cy+(h2-0.5)*3); x.stroke(); }
         for(let i=0;i<4;i++){ if(hash(i,r*7+j,6)<0.45){ const cx=bxp+hash(r,i*3+j,8)*bwp, cy=byp+hash(i*5+r,j,9)*bhp; x.fillStyle='rgba(38,28,16,0.15)'; x.beginPath(); x.arc(cx,cy,1+hash(i,j+r,2)*2,0,7); x.fill(); } }
@@ -213,14 +213,14 @@
     const texLoader=new THREE.TextureLoader();
     function ltex(u,srgb){ const t=texLoader.load(u); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; if(srgb)t.colorSpace=THREE.SRGBColorSpace; return t; }
     const MARB_D=ltex('./vendor/tex/marble_d.jpg',true), MARB_N=ltex('./vendor/tex/marble_n.jpg'), MARB_R=ltex('./vendor/tex/marble_r.jpg');
-    const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:KOTEL.map, bumpMap:KOTEL.bump, bumpScale:0.9, color:0xfff6e6, metalness:0, roughness:0.9 });
+    const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:KOTEL.map, bumpMap:KOTEL.bump, bumpScale:0.5, color:0xf4e9cf, metalness:0, roughness:0.92 });
     const MARBLE_TEX_MAT=new THREE.MeshStandardMaterial({ map:MARB_D, normalMap:MARB_N, roughnessMap:MARB_R, metalness:0, normalScale:new THREE.Vector2(0.35,0.35) });
     const TILE=8;
     function stoneMat(w,h,tint){ return SANDSTONE_MAT; }
 
     // ============ materials ============
-    const GOLD   = new THREE.MeshStandardMaterial({ map:GTEX, color:0xfff0d2, metalness:.95, roughness:.32, emissive:0x5a3a08, emissiveIntensity:.34, envMapIntensity:1.25 });
-    const GOLD_B = new THREE.MeshStandardMaterial({ map:GTEX, color:0xfff4dc, metalness:1,   roughness:.22, emissive:0x7d540f, emissiveIntensity:.55, envMapIntensity:1.35 });
+    const GOLD   = new THREE.MeshStandardMaterial({ map:GTEX, color:0xe6cb86, metalness:.9, roughness:.4, emissive:0x281b04, emissiveIntensity:.1, envMapIntensity:1.05 });
+    const GOLD_B = new THREE.MeshStandardMaterial({ map:GTEX, color:0xf0d894, metalness:.95,  roughness:.3, emissive:0x33240a, emissiveIntensity:.14, envMapIntensity:1.1 });
     const bronze = new THREE.MeshStandardMaterial({ color:0x9a6f34, metalness:.88, roughness:.4 });
     const DARK   = new THREE.MeshStandardMaterial({ color:0x0d0a06, roughness:1 });
     const CURTAIN= new THREE.MeshStandardMaterial({ color:0x6b1f2c, roughness:.7, emissive:0x230709, emissiveIntensity:.5 });
@@ -248,7 +248,7 @@
       const disk=new THREE.Mesh(new THREE.CircleGeometry(24,32), new THREE.MeshBasicMaterial({color:0xfff7e2,fog:false,transparent:true,opacity:0.96,depthWrite:false})); disk.position.copy(sd); disk.lookAt(0,0,0); scene.add(disk);
       const gc=document.createElement('canvas'); gc.width=gc.height=128; const gx=gc.getContext('2d'); const rg=gx.createRadialGradient(64,64,3,64,64,64); rg.addColorStop(0,'rgba(255,247,224,0.95)'); rg.addColorStop(0.28,'rgba(255,238,198,0.4)'); rg.addColorStop(1,'rgba(255,238,198,0)'); gx.fillStyle=rg; gx.fillRect(0,0,128,128);
       const gt=new THREE.CanvasTexture(gc); const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:gt,fog:false,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})); glow.scale.setScalar(280); glow.position.copy(sd); scene.add(glow); })();
-    scene.fog = new THREE.Fog(0xe9d6b0, 95, 560);
+    scene.fog = new THREE.Fog(0xe9d6b0, 72, 430);
     // gold reflections — image-based lighting from a tiny sky environment
     try{ const pmrem=new THREE.PMREMGenerator(renderer); const es=new THREE.Scene();
       es.add(new THREE.Mesh(new THREE.SphereGeometry(50,16,12), new THREE.MeshBasicMaterial({color:0x60789a,side:THREE.BackSide})));
@@ -351,7 +351,7 @@
       for(let z=12.5; z<=29; z+=5.5){ for(const sx of [-1,1]) box(0.3,3.2,1.3, sx*(HW+1.35), baseY+27.2, z, wmat, {noCast:true}); }
     })();
     // the Heichal walls overlaid with gold (Melachim I 6:21–22; Middos) — the sanctuary the player walks through
-    (function(){ const GW=new THREE.MeshStandardMaterial({ map:GTEX, color:0xf1d585, metalness:.82, roughness:.5, envMapIntensity:.85, emissive:0x3a2a08, emissiveIntensity:.16 });
+    (function(){ const GW=new THREE.MeshStandardMaterial({ map:GTEX, color:0xe4c877, metalness:.85, roughness:.55, envMapIntensity:.85, emissive:0x241a05, emissiveIntensity:.08 });
       const zc=(9.5+FRONT_Z)/2, zd=FRONT_Z-9.5;
       box(0.3, 30, zd, HW-0.1, baseY+15, zc, GW, {noCast:true});          // north inner wall (behind the Shulchan)
       box(0.3, 30, zd, -(HW-0.1), baseY+15, zc, GW, {noCast:true});       // south inner wall (behind the Menorah)
@@ -360,7 +360,7 @@
       for(const sx of [-1,1]) box(5, 30, 0.25, sx*6.5, baseY+15, 10.15, GW, {noCast:true});               // KHK partition wall, gilded, flanking the paroches
     })();
     // carved gold reliefs on the Heichal walls — cherubim, palm trees & open flowers (Melachim I 6:29; Yechezkel 41:18)
-    (function(){ const gm=new THREE.MeshStandardMaterial({ map:GTEX, color:0xecca66, metalness:.85, roughness:.4, emissive:0x2c1f06, emissiveIntensity:.16 });
+    (function(){ const gm=new THREE.MeshStandardMaterial({ map:GTEX, color:0xdcbe5e, metalness:.88, roughness:.45, emissive:0x1e1504, emissiveIntensity:.08 });
       const XW=8.55;
       function timora(sx,z,y){ const g=new THREE.Group();
         const trunk=new THREE.Mesh(new THREE.BoxGeometry(0.32,5,0.75),gm); trunk.position.y=2.5; g.add(trunk);
@@ -384,7 +384,7 @@
       }
     })();
     // the Holy of Holies (Kodesh haKodashim) overlaid with pure gold (Melachim I 6:20) — revealed when the last paroches opens
-    (function(){ const GK=new THREE.MeshStandardMaterial({ map:GTEX, color:0xf3d67e, metalness:.88, roughness:.42, envMapIntensity:.9, emissive:0x3a2807, emissiveIntensity:.2 });
+    (function(){ const GK=new THREE.MeshStandardMaterial({ map:GTEX, color:0xe6c86e, metalness:.9, roughness:.48, envMapIntensity:.9, emissive:0x281c05, emissiveIntensity:.1 });
       const zc=(REAR_Z+9.5)/2, zd=9.5-REAR_Z;
       box(0.3, 28, zd, HW-0.1, baseY+14, zc, GK, {noCast:true});           // north wall
       box(0.3, 28, zd, -(HW-0.1), baseY+14, zc, GK, {noCast:true});        // south wall
@@ -604,7 +604,7 @@
     // ============ birds + clouds ============
     const birds=[]; const birdMat=new THREE.MeshBasicMaterial({color:0x2a2620,side:THREE.DoubleSide});
     for(let i=0;i<10;i++){ const b=new THREE.Group(); for(const sx of [-1,1]){ const w=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.4),birdMat); w.position.x=sx*0.75; w.rotation.z=sx*0.5; b.add(w);} b.userData={r:35+Math.random()*55,sp:0.15+Math.random()*0.2,ph:Math.random()*6,y:55+Math.random()*30}; scene.add(b); birds.push(b); }
-    const clouds=[]; const cloudMat=new THREE.MeshBasicMaterial({color:0xf4efe0,transparent:true,opacity:0.7,fog:false});
+    const clouds=[]; const cloudMat=new THREE.MeshBasicMaterial({color:0xe3ddcf,transparent:true,opacity:0.42,fog:false});
     for(let i=0;i<8;i++){ const cl=new THREE.Group(); const n=3+Math.floor(Math.random()*3); for(let j=0;j<n;j++){ const r=11+Math.random()*10; const puff=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),cloudMat); puff.scale.y=0.5; puff.position.set((j-(n-1)/2)*r*0.85,(Math.random()-0.5)*4,(Math.random()-0.5)*9); cl.add(puff); }
       cl.position.set((Math.random()-0.5)*420,95+Math.random()*45,(Math.random()-0.5)*420+40); cl.userData={sp:1+Math.random()*2}; scene.add(cl); clouds.push(cl); }
 
@@ -618,7 +618,7 @@
     const gates=[]; let quizGate=null, stars=0, winning=false, mode='younger';
     function makeGate(z,hw,qs){ const H = hw>12?9 : (z<12?5:7); const grp=new THREE.Group();
       const pt=PAROCHES.clone(); pt.needsUpdate=true; pt.wrapS=pt.wrapT=THREE.RepeatWrapping; pt.repeat.set(Math.max(2,Math.round(hw/3)),1);
-      const cur=new THREE.Mesh(new THREE.BoxGeometry(hw*2,H,0.4),new THREE.MeshStandardMaterial({map:pt,color:0xffffff,emissive:0x171043,emissiveIntensity:.22,roughness:.85})); cur.position.y=baseY+H/2; grp.add(cur);
+      const cur=new THREE.Mesh(new THREE.BoxGeometry(hw*2,H,0.4),new THREE.MeshStandardMaterial({map:pt,color:0xefe7dd,emissive:0x0a0820,emissiveIntensity:.06,roughness:.92})); cur.position.y=baseY+H/2; grp.add(cur);
       const fr=new THREE.Mesh(new THREE.BoxGeometry(hw*2+1.4,0.7,0.7),GOLD_B); fr.position.y=baseY+H+0.2; grp.add(fr);
       const orb=new THREE.Mesh(new THREE.SphereGeometry(0.5,16,12),new THREE.MeshStandardMaterial({color:0x8a6a2a,metalness:.9,roughness:.3,emissive:0xffcf6a,emissiveIntensity:.5})); orb.position.set(0,baseY+H+1.5,0); grp.add(orb);
       grp.position.z=z; grp.traverse(o=>{if(o.isMesh)o.castShadow=true;}); scene.add(grp);
@@ -696,7 +696,7 @@
     const riverMat=new THREE.MeshStandardMaterial({ map:WTEX, color:0x8fd0e8, metalness:.4, roughness:.15, transparent:true, opacity:.9 });
     for(let i=0;i<8;i++){ const seg=new THREE.Mesh(new THREE.PlaneGeometry(2.5+i*1.8,16),riverMat); seg.rotation.x=-Math.PI/2; seg.position.set(0,0.06,98+i*16); scene.add(seg); }
     // healing fruit-trees on both banks (Yechezkel 47:12 — "their fruit for food and their leaves for healing")
-    (function(){ const trunkM=new THREE.MeshStandardMaterial({color:0x6b4a2a,roughness:.9}), leafM=new THREE.MeshStandardMaterial({color:0x3f7a34,roughness:.95}), fruitM=new THREE.MeshStandardMaterial({color:0xcf3a26,roughness:.55,emissive:0x360a04,emissiveIntensity:.25});
+    (function(){ const trunkM=new THREE.MeshStandardMaterial({color:0x5f452a,roughness:.95}), leafM=new THREE.MeshStandardMaterial({color:0x4f6a33,roughness:1}), fruitM=new THREE.MeshStandardMaterial({color:0x8f3222,roughness:.7});
       function tree(x,z){ const g=new THREE.Group(); const h=2.4+Math.random()*1.5;
         const tr=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.33,h,8),trunkM); tr.position.y=h/2; g.add(tr);
         for(let c=0;c<3;c++){ const can=new THREE.Mesh(new THREE.SphereGeometry(1.35-c*0.22,10,8),leafM); can.position.y=h+0.1+c*0.72; can.scale.y=0.82; g.add(can); }
