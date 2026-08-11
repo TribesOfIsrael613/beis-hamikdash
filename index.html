@@ -214,7 +214,7 @@
     function ltex(u,srgb){ const t=texLoader.load(u); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; if(srgb)t.colorSpace=THREE.SRGBColorSpace; return t; }
     const MARB_D=ltex('./vendor/tex/marble_d.jpg',true), MARB_N=ltex('./vendor/tex/marble_n.jpg'), MARB_R=ltex('./vendor/tex/marble_r.jpg');
     const SANDSTONE_MAT=new THREE.MeshStandardMaterial({ map:KOTEL.map, bumpMap:KOTEL.bump, bumpScale:0.5, color:0xf4e9cf, metalness:0, roughness:0.92 });
-    const MARBLE_TEX_MAT=new THREE.MeshStandardMaterial({ map:MARB_D, normalMap:MARB_N, roughnessMap:MARB_R, metalness:0, normalScale:new THREE.Vector2(0.35,0.35) });
+    const MARBLE_TEX_MAT=new THREE.MeshStandardMaterial({ map:MARB_D, normalMap:MARB_N, roughnessMap:MARB_R, color:0xe6dbc2, metalness:0, roughness:0.7, normalScale:new THREE.Vector2(0.4,0.4) });
     const TILE=8;
     function stoneMat(w,h,tint){ return SANDSTONE_MAT; }
 
@@ -272,7 +272,7 @@
     const baseY=1.4;
 
     // ============ ground + platform (marble) ============
-    const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700), (()=>{ const t=MARBLE.clone(); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(50,50); return new THREE.MeshStandardMaterial({map:t,color:0xeadfc6,roughness:.55,metalness:0,envMapIntensity:.55}); })());
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700), (()=>{ const t=MARBLE.clone(); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(50,50); return new THREE.MeshStandardMaterial({map:t,color:0xd9cba9,roughness:.74,metalness:0,envMapIntensity:.3}); })());
     ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground); walkable.push(ground);
     const platform=box(126,1.4,140,0,0.7,14,MARBLE_TEX_MAT,{walk:true});
     for(let i=0;i<4;i++){ box(126-i*6,0.5,4,0,0.25,84-i*2.2,MARBLE_M,{walk:true,noCast:true}); }
