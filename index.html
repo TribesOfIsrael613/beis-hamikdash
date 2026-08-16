@@ -433,10 +433,25 @@
     for(let i=0;i<12;i++){ const p=new THREE.Mesh(new THREE.SphereGeometry(1.5,8,8),smokeMat.clone()); p.userData={t:Math.random()*5,r:Math.random()}; scene.add(p); smoke.push(p); }
 
     // ============ water channel (amah) through the azarah ============
-    const channelMat=new THREE.MeshStandardMaterial({ map:WTEX, color:0x9fd0e6, metalness:.3, roughness:.2, transparent:true, opacity:.9 });
-    WTEX.repeat.set(1,18);
-    box(1.0,0.4,52,-13,baseY+0.05,40,channelMat,{noCast:true});
-    box(1.6,0.5,52,-13,baseY-0.05,40,stoneMat(2,52,0xd8cdb0),{noCast:true});
+    // The amah is a groove cut through the floor, not a stripe laid on top of it. The water
+    // slab used to sit proud of its own stone surround, which is what made it read as blue
+    // paint: kerbs now stand above the surface and the water is recessed between them, over a
+    // dark wet bed that shows through. Its own texture clone so it can run faster than the
+    // river without dragging the river's flow along with it.
+    // box() already scales UVs by size/TILE, so the old repeat of 18 landed at ~170 tiles
+    // along 52 units — ripples finer than a pixel, which average out to flat blue. These
+    // numbers are chosen against that scaling to leave the streaks actually visible.
+    const CHAN_TEX=WTEX.clone(); CHAN_TEX.needsUpdate=true; CHAN_TEX.repeat.set(8,1.6);
+    const channelMat=new THREE.MeshStandardMaterial({ map:CHAN_TEX, color:0x86b8cf, metalness:.45, roughness:.12, transparent:true, opacity:.74 });
+    const bedMat=new THREE.MeshStandardMaterial({ color:0x4c4636, roughness:.5 });
+    const AX=-13, AZC=40, ALEN=52;
+    box(1.05,0.10,ALEN,AX,baseY-0.02,AZC,bedMat,{noCast:true});                 // wet bed, top baseY+0.03
+    box(1.00,0.10,ALEN,AX,baseY+0.08,AZC,channelMat,{noCast:true});             // water, top baseY+0.13
+    // Kerbs stay low and wide on purpose: box() picks its UV scale from the proportions, and
+    // anything taller than 0.6x its width takes the wall branch, which stretches the ashlar
+    // along all 52 units and makes the rim read as a plank of wood.
+    for(const sx of [-0.75,0.75])                                               // kerbs, top baseY+0.22
+      box(0.5,0.28,ALEN,AX+sx,baseY+0.08,AZC,stoneMat(1,ALEN,0xd8cdb0),{noCast:true});
 
     // ============ figures ============
     function person(x,z,y,opts={}){ const g=new THREE.Group(); const rnv=((Math.sin(x*12.9+z*78.23)*43758.5)%1+1)%1; const h=(opts.h||1.8)*(0.94+rnv*0.12); const rm=opts.robe||ROBE_W;
@@ -1053,7 +1068,7 @@
       shechina.intensity=2.1+Math.sin(now*1.3)*0.4;
       for(const p of smoke){ p.userData.t+=dt; const t=p.userData.t%5; p.position.set(Math.sin(t*1.4+p.userData.r*6)*0.9,ay+2+t*3.3,AZ+Math.cos(t+p.userData.r*6)*0.6); p.scale.setScalar(1+t*0.75); p.material.opacity=Math.max(0,0.5*(1-t/5)); }
       for(const p of incense){ p.userData.t+=dt; const t=p.userData.t%4; p.position.set(Math.sin(t*2)*0.25,baseY+2+t*1.6,11); p.scale.setScalar(0.4+t*0.5); p.material.opacity=Math.max(0,0.4*(1-t/4)); }
-      WTEX.offset.y -= dt*0.6;
+      WTEX.offset.y -= dt*0.6; CHAN_TEX.offset.y -= dt*0.95;   // the amah runs faster than the river
       for(let i=0;i<leviim.length;i++) leviim[i].rotation.z=Math.sin(now*2.4+i)*0.06;
       for(let i=0;i<kohanimArr.length;i++) kohanimArr[i].rotation.z=Math.sin(now*1.6+i*2)*0.04;
       // dawn -> day cycle
