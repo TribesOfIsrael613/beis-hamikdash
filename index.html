@@ -468,6 +468,38 @@
     // everything above the waist is authored relative to it — the upper half then hinges as a
     // unit while the hem stays planted. Both profiles share the radius at the seam so it closes.
     const WAIST=0.430;
+
+    // Welds fixed parts into one buffer. Every figure places its head, hands and beard at the
+    // same offsets, so the parts that share a material can be baked together once and drawn as
+    // a single mesh — thirteen draws per person becomes five or six, which is the difference
+    // that shows on a phone. Geometry is still shared; this removes the per-part draw calls.
+    function mergeParts(parts){
+      const geos=parts.map(p=>{ const g=p.g.clone(); if(p.m) g.applyMatrix4(p.m); return g.index?g:g.toNonIndexed(); });
+      let vc=0, ic=0;
+      for(const g of geos){ vc+=g.attributes.position.count; ic+=g.index.count; }
+      const pos=new Float32Array(vc*3), nor=new Float32Array(vc*3), uvs=new Float32Array(vc*2), idx=new Uint32Array(ic);
+      let vo=0, io=0;
+      for(const g of geos){
+        const p=g.attributes.position, n=g.attributes.normal, t=g.attributes.uv, gi=g.index;
+        pos.set(p.array, vo*3); if(n) nor.set(n.array, vo*3); if(t) uvs.set(t.array, vo*2);
+        for(let i=0;i<gi.count;i++) idx[io+i]=gi.array[i]+vo;
+        io+=gi.count; vo+=p.count; g.dispose();
+      }
+      const out=new THREE.BufferGeometry();
+      out.setAttribute('position',new THREE.BufferAttribute(pos,3));
+      out.setAttribute('normal',new THREE.BufferAttribute(nor,3));
+      out.setAttribute('uv',new THREE.BufferAttribute(uvs,2));
+      out.setIndex(new THREE.BufferAttribute(idx,1));
+      return out;
+    }
+    // Translate composed after rotate, so the part spins about its own origin then moves.
+    function partAt(x,y,z,rx,rz){
+      const m=new THREE.Matrix4().makeTranslation(x,y,z);
+      if(rz) m.multiply(new THREE.Matrix4().makeRotationZ(rz));
+      if(rx) m.multiply(new THREE.Matrix4().makeRotationX(rx));
+      return m;
+    }
+
     const FIG=(()=>{
       const V=(r,y)=>new THREE.Vector2(r,y);
       const U=(r,y)=>new THREE.Vector2(r,y-WAIST);      // upper pieces sit relative to the hinge
@@ -493,7 +525,21 @@
       const tallis=new THREE.LatheGeometry([
         U(0.150,0.500),U(0.158,0.590),U(0.157,0.680),U(0.144,0.745),U(0.118,0.792),U(0.088,0.812)],
         16,Math.PI*0.40,Math.PI*1.20);
-      return {robeLower,robeUpper,shoulder,sash,arm,hand,neck,head,hair,turban,beard,peyos,tallis};
+      // Baked sets, grouped by the material each part is drawn with.
+      const upperRobe=mergeParts([
+        {g:robeUpper},{g:shoulder},
+        {g:arm,m:partAt(-0.143,0.585-WAIST,0,0,-0.075)},
+        {g:arm,m:partAt( 0.143,0.585-WAIST,0,0, 0.075)}]);
+      const skinSet=mergeParts([
+        {g:neck},{g:head},
+        {g:hand,m:partAt(-0.156,0.378-WAIST,0.006)},
+        {g:hand,m:partAt( 0.156,0.378-WAIST,0.006)}]);
+      const beardOnly=mergeParts([{g:beard,m:partAt(0,0.878-WAIST,0.030,0.26,0)}]);
+      const hairSet=mergeParts([
+        {g:hair},{g:beard,m:partAt(0,0.878-WAIST,0.030,0.26,0)},
+        {g:peyos,m:partAt(-0.072,0.877-WAIST,0.014,0,-0.13)},
+        {g:peyos,m:partAt( 0.072,0.877-WAIST,0.014,0, 0.13)}]);
+      return {robeLower,upperRobe,skinSet,hairSet,beardOnly,turban,sash,tallis};
     })();
 
     function person(x,z,y,opts={}){ const g=new THREE.Group(); const rnv=((Math.sin(x*12.9+z*78.23)*43758.5)%1+1)%1; const h=(opts.h||1.8)*(0.94+rnv*0.12); const rm=opts.robe||ROBE_W;
@@ -504,19 +550,13 @@
       // Everything from the waist up hangs off a hinge, so a bow folds the body forward
       // instead of tipping the whole person over at the feet.
       const up=new THREE.Group(); up.position.y=WAIST; b.add(up);
-      up.add(new THREE.Mesh(FIG.robeUpper,rm));
-      up.add(new THREE.Mesh(FIG.shoulder,rm));
+      up.add(new THREE.Mesh(FIG.upperRobe,rm));
       if(opts.tallis) up.add(new THREE.Mesh(FIG.tallis,TALLIS));
       if(opts.sash!==false) up.add(new THREE.Mesh(FIG.sash,opts.sash||SASH));
-      for(const sx of [-1,1]){
-        const a=new THREE.Mesh(FIG.arm,rm); a.position.set(sx*0.143,0.585-WAIST,0); a.rotation.z=sx*0.075; up.add(a);
-        const hd=new THREE.Mesh(FIG.hand,SKIN); hd.position.set(sx*0.156,0.378-WAIST,0.006); up.add(hd); }
-      up.add(new THREE.Mesh(FIG.neck,SKIN));
-      up.add(new THREE.Mesh(FIG.head,SKIN));
-      const bd=new THREE.Mesh(FIG.beard,HAIR); bd.position.set(0,0.878-WAIST,0.030); bd.rotation.x=0.26; up.add(bd);
-      if(opts.turban){ up.add(new THREE.Mesh(FIG.turban,opts.turban)); }
-      else { up.add(new THREE.Mesh(FIG.hair,HAIR));
-        for(const sx of [-1,1]){ const p=new THREE.Mesh(FIG.peyos,HAIR); p.position.set(sx*0.072,0.877-WAIST,0.014); p.rotation.z=sx*0.13; up.add(p); } }
+      up.add(new THREE.Mesh(FIG.skinSet,SKIN));
+      // A turban covers the hair and the peyos with it, but the beard still shows.
+      if(opts.turban){ up.add(new THREE.Mesh(FIG.turban,opts.turban)); up.add(new THREE.Mesh(FIG.beardOnly,HAIR)); }
+      else up.add(new THREE.Mesh(FIG.hairSet,HAIR));
       if(opts.bow) up.rotation.x=opts.bow;
       if(opts.hold){ opts.hold.position.set(0,h*0.5,0.34); g.add(opts.hold); }
       g.position.set(x,y,z); if(opts.ry!=null) g.rotation.y=opts.ry+(rnv-0.5)*0.18;
