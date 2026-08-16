@@ -454,17 +454,58 @@
       box(0.5,0.28,ALEN,AX+sx,baseY+0.08,AZC,stoneMat(1,ALEN,0xd8cdb0),{noCast:true});
 
     // ============ figures ============
+    const TALLIS=new THREE.MeshStandardMaterial({map:linen('#f7f3e7'),color:0xffffff,roughness:.93,side:THREE.DoubleSide});
+
+    // ---- shared figure parts ----
+    // Fifty-odd people stand in these courts and each one used to allocate eleven fresh
+    // geometries of its own. They differ only in height, so the figure is authored once at
+    // unit height and scaled per person instead — one set of parts for the whole world.
+    //
+    // The body is a single turned profile rather than a stack of cylinders: a robe flares at
+    // the hem, draws in at the waist and fills again across the chest, and it is that curve
+    // that stops a standing figure reading as a capsule.
+    const FIG=(()=>{
+      const V=(r,y)=>new THREE.Vector2(r,y);
+      const robe=new THREE.LatheGeometry([
+        V(0.170,0.000),V(0.166,0.060),V(0.156,0.150),V(0.143,0.270),V(0.131,0.400),
+        V(0.128,0.455),V(0.134,0.530),V(0.139,0.620),V(0.134,0.700),V(0.118,0.760),
+        V(0.090,0.800),V(0.055,0.820)],20);
+      // Shoulders are wider across than deep, which a turned profile cannot express.
+      const shoulder=new THREE.SphereGeometry(0.135,16,10); shoulder.scale(1.15,0.60,0.88); shoulder.translate(0,0.782,0);
+      const sash=new THREE.CylinderGeometry(0.134,0.134,0.040,18); sash.translate(0,0.497,0);
+      const arm=new THREE.CylinderGeometry(0.040,0.033,0.40,8);
+      const hand=new THREE.SphereGeometry(0.031,8,7);
+      const neck=new THREE.CylinderGeometry(0.037,0.045,0.055,8); neck.translate(0,0.838,0);
+      const head=new THREE.SphereGeometry(0.076,18,14); head.scale(0.93,1.07,0.96); head.translate(0,0.902,0);
+      const hair=new THREE.SphereGeometry(0.081,18,10,0,Math.PI*2,0,Math.PI*0.60); hair.translate(0,0.918,0);
+      const turban=new THREE.SphereGeometry(0.088,18,10,0,Math.PI*2,0,Math.PI*0.56); turban.translate(0,0.928,0);
+      const beard=new THREE.ConeGeometry(0.056,0.125,10); beard.rotateX(Math.PI);   // apex down, off the chin
+      const peyos=new THREE.CylinderGeometry(0.015,0.009,0.105,6);
+      // A shawl turned through part of a revolution: wrapped round the back and shoulders,
+      // open across the front. Lathe theta starts at +z, which is the way a figure faces.
+      const tallis=new THREE.LatheGeometry([
+        V(0.150,0.500),V(0.158,0.590),V(0.157,0.680),V(0.144,0.745),V(0.118,0.792),V(0.088,0.812)],
+        16,Math.PI*0.40,Math.PI*1.20);
+      return {robe,shoulder,sash,arm,hand,neck,head,hair,turban,beard,peyos,tallis};
+    })();
+
     function person(x,z,y,opts={}){ const g=new THREE.Group(); const rnv=((Math.sin(x*12.9+z*78.23)*43758.5)%1+1)%1; const h=(opts.h||1.8)*(0.94+rnv*0.12); const rm=opts.robe||ROBE_W;
-      const skirt=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.3,h*0.52,12),rm); skirt.position.y=h*0.26; g.add(skirt);
-      const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.23,0.21,h*0.32,12),rm); torso.position.y=h*0.64; g.add(torso);
-      if(opts.sash!==false){ const sash=new THREE.Mesh(new THREE.CylinderGeometry(0.238,0.238,h*0.07,14),opts.sash||SASH); sash.position.y=h*0.5; g.add(sash); }
-      const shoulders=new THREE.Mesh(new THREE.SphereGeometry(0.25,14,10),rm); shoulders.scale.set(1,0.55,0.72); shoulders.position.y=h*0.78; g.add(shoulders);
-      for(const sx of [-1,1]){ const a=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.05,h*0.42,8),rm); a.position.set(sx*0.25,h*0.56,0); a.rotation.z=sx*0.05; g.add(a); const hand=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,8),SKIN); hand.position.set(sx*0.263,h*0.36,0.01); g.add(hand); }
-      const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,0.09,8),SKIN); neck.position.y=h*0.83; g.add(neck);
-      const head=new THREE.Mesh(new THREE.SphereGeometry(0.135,16,14),SKIN); head.position.y=h*0.9; g.add(head);
-      const beard=new THREE.Mesh(new THREE.ConeGeometry(0.11,0.2,8),HAIR); beard.position.set(0,h*0.86,0.08); beard.rotation.x=0.3; g.add(beard);
-      if(opts.turban){ const t=new THREE.Mesh(new THREE.SphereGeometry(0.155,16,10,0,Math.PI*2,0,Math.PI*0.58),opts.turban); t.position.y=h*0.93; g.add(t); }
-      else { const hair=new THREE.Mesh(new THREE.SphereGeometry(0.145,16,10,0,Math.PI*2,0,Math.PI*0.62),HAIR); hair.position.y=h*0.92; g.add(hair); }
+      // The scaled body hangs inside an unscaled group, so anything attached from outside —
+      // an instrument, a visitor's name tag — stays in world units.
+      const b=new THREE.Group(); b.scale.setScalar(h); g.add(b);
+      b.add(new THREE.Mesh(FIG.robe,rm));
+      b.add(new THREE.Mesh(FIG.shoulder,rm));
+      if(opts.tallis) b.add(new THREE.Mesh(FIG.tallis,TALLIS));
+      if(opts.sash!==false) b.add(new THREE.Mesh(FIG.sash,opts.sash||SASH));
+      for(const sx of [-1,1]){
+        const a=new THREE.Mesh(FIG.arm,rm); a.position.set(sx*0.143,0.585,0); a.rotation.z=sx*0.075; b.add(a);
+        const hd=new THREE.Mesh(FIG.hand,SKIN); hd.position.set(sx*0.156,0.378,0.006); b.add(hd); }
+      b.add(new THREE.Mesh(FIG.neck,SKIN));
+      b.add(new THREE.Mesh(FIG.head,SKIN));
+      const bd=new THREE.Mesh(FIG.beard,HAIR); bd.position.set(0,0.878,0.030); bd.rotation.x=0.26; b.add(bd);
+      if(opts.turban){ b.add(new THREE.Mesh(FIG.turban,opts.turban)); }
+      else { b.add(new THREE.Mesh(FIG.hair,HAIR));
+        for(const sx of [-1,1]){ const p=new THREE.Mesh(FIG.peyos,HAIR); p.position.set(sx*0.072,0.877,0.014); p.rotation.z=sx*0.13; b.add(p); } }
       if(opts.hold){ opts.hold.position.set(0,h*0.5,0.34); g.add(opts.hold); }
       g.position.set(x,y,z); if(opts.ry!=null) g.rotation.y=opts.ry+(rnv-0.5)*0.18; if(opts.bow) g.rotation.x=opts.bow;
       g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); scene.add(g); return g; }
@@ -512,7 +553,7 @@
     kohanimArr.push(person(-3,AZ+6,baseY,{robe:ROBE_W,turban:ROBE_W,h:1.8,ry:Math.PI}));
     kohanimArr.push(person(2,AZ+6.5,baseY,{robe:ROBE_W,turban:ROBE_W,h:1.78,ry:Math.PI+0.3}));
     // pilgrims (Women's court, east)
-    for(let i=0;i<10;i++){ const ang=(i/10)*Math.PI-Math.PI/2; person(Math.sin(ang)*17,74+(i%3)*2.6,baseY,{robe:i%2?ROBE_W:ROBE_LV,h:1.7+(i%4)*0.05,ry:Math.PI,bow:(i%4===0)?0.5:0}); }
+    for(let i=0;i<10;i++){ const ang=(i/10)*Math.PI-Math.PI/2; person(Math.sin(ang)*17,74+(i%3)*2.6,baseY,{robe:i%2?ROBE_W:ROBE_LV,h:1.7+(i%4)*0.05,ry:Math.PI,bow:(i%4===0)?0.5:0,tallis:i%3===0}); }
 
     // ============ Soreg + warning plaque ============
     const soregMat=new THREE.MeshStandardMaterial({color:0xcdb88a,roughness:.8,metalness:.1});
@@ -619,7 +660,7 @@
 
     // ============ walking crowd of pilgrims ============
     const crowd=[];
-    for(let i=0;i<12;i++){ const x=(i%2?1:-1)*(2+Math.random()*3); const g=person(x,90+i*7,baseY,{robe:i%2?ROBE_W:ROBE_LV,h:1.68+Math.random()*0.2,ry:Math.PI}); crowd.push({g,sp:1.4+Math.random()*1.3,ph:Math.random()*6}); }
+    for(let i=0;i<12;i++){ const x=(i%2?1:-1)*(2+Math.random()*3); const g=person(x,90+i*7,baseY,{robe:i%2?ROBE_W:ROBE_LV,h:1.68+Math.random()*0.2,ry:Math.PI,tallis:i%4===0}); crowd.push({g,sp:1.4+Math.random()*1.3,ph:Math.random()*6}); }
 
     // ============ birds + clouds ============
     const birds=[]; const birdMat=new THREE.MeshBasicMaterial({color:0x2a2620,side:THREE.DoubleSide});
