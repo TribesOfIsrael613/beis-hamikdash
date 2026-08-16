@@ -1,8 +1,10 @@
 // Minimal static server for the Temple web app. Serves its own folder (__dirname),
 // so it has no dependency on the process working directory.
+// It also carries the realtime presence layer on /ws — see visitors.js.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const attachPresence = require('./visitors');
 
 const root = __dirname;
 const types = {
@@ -14,7 +16,7 @@ const types = {
 };
 const PORT = Number(process.env.PORT) || 8123;
 
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
   let u = decodeURIComponent(req.url.split('?')[0]);
   if (u === '/' || u.endsWith('/')) u += 'index.html';
   const file = path.normalize(path.join(root, u));
@@ -24,4 +26,8 @@ http.createServer((req, res) => {
     res.setHeader('Content-Type', types[path.extname(file)] || 'application/octet-stream');
     res.end(data);
   });
-}).listen(PORT, '127.0.0.1', () => console.log('temple server on http://127.0.0.1:' + PORT));
+});
+
+attachPresence(server);
+
+server.listen(PORT, () => console.log('temple server on http://127.0.0.1:' + PORT + '  (presence on /ws)'));

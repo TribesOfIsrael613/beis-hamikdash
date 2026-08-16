@@ -1,0 +1,24 @@
+{
+  "name": "beis-hamikdash",
+  "version": "1.0.0",
+  "description": "An explorable, kid-friendly 3D model of the Holy Temple of Jerusalem — a learning escape room you can walk through together.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TribesOfIsrael613/beis-hamikdash.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/TribesOfIsrael613/beis-hamikdash/issues"
+  },
+  "homepage": "https://github.com/TribesOfIsrael613/beis-hamikdash#readme",
+  "dependencies": {
+    "ws": "^8.21.3"
+  }
+}

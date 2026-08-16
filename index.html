@@ -73,6 +73,11 @@
   html,body{ touch-action:none; overscroll-behavior:none; }
   #tctl{ position:fixed; inset:0; z-index:12; pointer-events:none; display:none; }
   body.touch #tctl.on{ display:block; }
+  /* greeting row — only shown on touch, and only once other visitors are here */
+  #emotes{ position:fixed; right:12px; bottom:96px; display:none; flex-direction:column; gap:8px; pointer-events:auto; }
+  #emotes.on{ display:flex; }
+  #emotes button{ font-size:22px; line-height:1; width:46px; height:46px; border-radius:50%; cursor:pointer;
+    border:1px solid rgba(234,185,63,.45); background:rgba(20,16,8,.55); color:#fff; }
   #joy{ position:absolute; width:118px; height:118px; margin:-59px 0 0 -59px; border-radius:50%; background:rgba(255,255,255,.08); border:2px solid rgba(255,240,200,.32); display:none; }
   #joyknob{ position:absolute; left:50%; top:50%; width:52px; height:52px; margin:-26px 0 0 -26px; border-radius:50%; background:rgba(255,240,200,.5); box-shadow:0 2px 10px rgba(0,0,0,.4); }
   #shofarBtn{ position:absolute; right:20px; bottom:32px; padding:15px 20px; border-radius:16px; background:rgba(234,185,63,.94); color:#3a2a08; font:600 17px/1 system-ui,sans-serif; border:none; pointer-events:auto; display:none; }
@@ -84,7 +89,7 @@
 </style>
 </head>
 <body>
-  <div id="hud">The Beis HaMikdash · <span class="count" id="count">⭐ 0 / 5</span> · <span id="coins">🪙 0</span> · <span id="snd">♪ M</span></div>
+  <div id="hud">The Beis HaMikdash · <span class="count" id="count">⭐ 0 / 5</span> · <span id="coins">🪙 0</span> · <span id="snd">♪ M</span><span id="here"></span></div>
   <div id="crosshair"></div>
   <div id="defense">
     <div class="dtitle">🛡️ Guard the Temple! · <span id="dwave">Wave 1 / 3</span></div>
@@ -93,7 +98,7 @@
   </div>
   <div id="toast"></div>
   <div id="panel"><h2 id="p-title"></h2><p id="p-body"></p></div>
-  <div id="tctl"><div id="joy"><div id="joyknob"></div></div><button id="shofarBtn">🔔 Sound the shofar</button></div>
+  <div id="tctl"><div id="joy"><div id="joyknob"></div></div><button id="shofarBtn">🔔 Sound the shofar</button><div id="emotes"></div></div>
   <div id="done"><div><h2>🎉 Mazel tov!</h2><p id="done-body"></p><div id="done-btns"></div><div class="qrbox"><img src="qr.svg" width="104" height="104" alt="QR code — scan to play"><span>📱 Scan to challenge a friend</span></div></div></div>
   <div id="quiz"><div class="qbox"><div id="q-room"></div><div id="q-text"></div><div id="q-opts"></div><div id="q-feed"></div></div></div>
   <div id="overlay">
@@ -106,6 +111,8 @@
       <div>🚪 Answer the question at each <b>glowing gate</b> to open it</div>
       <div>🪙 Collect the <b>golden coins</b> as you explore</div>
       <div>👑 Reach the <b>Holy of Holies</b> to win!</div>
+      <div class="desk">👥 Others here walk with you — greet them with <b>1 2 3 4</b></div>
+      <div class="mob">👥 Others here walk with you — greet them with the <b>side buttons</b></div>
     </div>
     <div class="modes">
       <button class="modebtn" id="m-young">🧒 Ages 3–6<span>read aloud · tap the answer</span></button>
@@ -674,11 +681,11 @@
       speak(g.q.t+'. '+opts.map(o=>o.text).join('. ')); quizEl.style.display='flex'; }
     function answer(g,ok,btn){ if(ok){ g.solved=true; const k=colliders.indexOf(g.col); if(k>=0)colliders.splice(k,1); g.opening=true; stars++; updateStars(); chime(true); speak('Correct! '+g.q.ex);
         qFeed.textContent='🎉  '+g.q.ex; qOpts.innerHTML=''; const cont=document.createElement('button'); cont.className='qbtn cont'; cont.textContent=(stars>=gates.length)?'🎉 You did it! Go inside →':'Continue →';
-        cont.onclick=()=>{ quizEl.style.display='none'; const won=stars>=gates.length; quizGate=null; controls.lock(); if(won) setTimeout(winShow,500); }; qOpts.appendChild(cont); }
+        cont.onclick=()=>{ quizEl.style.display='none'; const won=stars>=gates.length; quizGate=null; resume(); if(won) setTimeout(winShow,500); }; qOpts.appendChild(cont); }
       else { qFeed.textContent='🙂  Almost — try again!'; chime(false); speak('Almost. Try again.'); if(btn) btn.style.opacity='0.45'; } }
     function winShow(){ winning=true; document.getElementById('done-body').textContent='🏆 You are a Temple Explorer! You earned ⭐ '+stars+'/'+gates.length+' and found 🪙 '+coinCount+'/'+coins.length+' coins — and learned your way into the Holy of Holies. Amazing!'; const bt=document.getElementById('done-btns'); bt.innerHTML='';
-      const again=document.createElement('button'); again.className='qbtn cont'; again.textContent='Play again 🔁'; again.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; resetGame(); controls.lock(); };
-      const keep=document.createElement('button'); keep.className='qbtn'; keep.textContent='Keep exploring 🚶'; keep.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; controls.lock(); };
+      const again=document.createElement('button'); again.className='qbtn cont'; again.textContent='Play again 🔁'; again.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; resetGame(); resume(); };
+      const keep=document.createElement('button'); keep.className='qbtn'; keep.textContent='Keep exploring 🚶'; keep.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; resume(); };
       const fight=document.createElement('button'); fight.className='qbtn cont'; fight.textContent='🛡️ Become a Levite guard — protect the Temple!'; fight.onclick=()=>startDefense();
       bt.appendChild(fight); bt.appendChild(again); bt.appendChild(keep); document.getElementById('done').style.display='flex'; speak('Mazel tov! You did it!'); burstConfetti(); controls.unlock(); }
     function chime(ok){ if(!audio)return; try{ const t=audio.ctx.currentTime, ns=ok?[523,659,784]:[300,235]; ns.forEach((f,k)=>{ const o=audio.ctx.createOscillator(); o.type='sine'; o.frequency.value=f; const gg=audio.ctx.createGain(); gg.gain.setValueAtTime(0,t+k*0.11); gg.gain.linearRampToValueAtTime(0.22,t+k*0.11+0.03); gg.gain.linearRampToValueAtTime(0,t+k*0.11+0.32); o.connect(gg).connect(audio.master); o.start(t+k*0.11); o.stop(t+k*0.11+0.36); }); }catch(e){} }
@@ -790,7 +797,7 @@
     function spawnWave(){ wave++; const dw=document.getElementById('dwave'); if(dw)dw.textContent='Wave '+wave+' / '+maxWave;
       const n=(mode==='adult'?5:3)+wave*2; for(let i=0;i<n;i++){ const x=(Math.random()-0.5)*56, z=78+Math.random()*20; enemies.push({g:roman(x,z),flee:false}); } waveActive=true; toast('Wave '+wave+' — hold the line! 🛡️'); }
     function startDefense(){ document.getElementById('done').style.display='none'; winning=false; defense=true; templeHP=100; wave=0; enemies.length=0; maxWave=(mode==='adult')?5:3;
-      document.getElementById('defense').style.display='flex'; shofar.visible=true; shieldDome.visible=true; readAloud=false; document.getElementById('shofarBtn').classList.add('on'); controls.lock(); spawnWave(); }
+      document.getElementById('defense').style.display='flex'; shofar.visible=true; shieldDome.visible=true; readAloud=false; document.getElementById('shofarBtn').classList.add('on'); resume(); spawnWave(); }
     function blast(){ if(blastCD>0)return; blastCD=1.1; domeFlash=0.3; pulse.visible=true; pulseT=0.6; pulse.scale.setScalar(1); pulse.position.set(player.position.x,baseY+0.4,player.position.z); pulse.material.opacity=0.7;
       if(audio){ try{ const t=audio.ctx.currentTime,o=audio.ctx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(255,t+0.15); const gg=audio.ctx.createGain(); gg.gain.setValueAtTime(0,t); gg.gain.linearRampToValueAtTime(0.16,t+0.05); gg.gain.linearRampToValueAtTime(0,t+0.7); const f=audio.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800; o.connect(f).connect(gg).connect(audio.master); o.start(t); o.stop(t+0.75); }catch(e){} }
       const R2=20*20; for(const e of enemies){ if(!e.g||e.flee)continue; const dx=e.g.position.x-player.position.x, dz=e.g.position.z-player.position.z; if(dx*dx+dz*dz<R2){ e.flee=true;
@@ -799,7 +806,7 @@
       for(const e of enemies){ if(e.g){ scene.remove(e.g); e.g=null; } } winning=true; controls.unlock();
       document.getElementById('done-body').textContent = win ? '🛡️ You guarded the Beis HaMikdash! The Levite guards turned the legions back with the light of the shofar. The eternal Temple stands. ⭐⭐⭐' : 'The legions pressed too close this time. Take up the shofar and guard again, brave Levite!';
       const bt=document.getElementById('done-btns'); bt.innerHTML=''; const b=document.createElement('button'); b.className='qbtn cont'; b.textContent = win?'Play again 🔁':'Guard again 🛡️';
-      b.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; if(win){ resetGame(); controls.lock(); } else startDefense(); };
+      b.onclick=()=>{ document.getElementById('done').style.display='none'; winning=false; if(win){ resetGame(); resume(); } else startDefense(); };
       bt.appendChild(b); if(win){ speak('You guarded the Holy Temple!'); burstConfetti(); } document.getElementById('done').style.display='flex'; }
 
     // ============ stations ============
@@ -850,7 +857,8 @@
 
     // ============ controls ============
     const controls=new PointerLockControls(camera,document.body); const player=controls.getObject?controls.getObject():controls.object; scene.add(player);
-    const EYE=1.7; player.position.set(0,baseY+EYE,96);
+    // Scatter arrivals across the approach so visitors don't spawn stacked inside one another.
+    const EYE=1.7; player.position.set((Math.random()-0.5)*7, baseY+EYE, 96+(Math.random()-0.5)*5);
     // ---- touch / mobile support (so the shared link plays on phones); IS_TOUCH defined up top ----
     if(IS_TOUCH) document.body.classList.add('touch');
     let touchActive=false; const touchMove={x:0,y:0};
@@ -858,10 +866,24 @@
     function applyLook(dx,dy){ _lookE.setFromQuaternion(camera.quaternion); _lookE.y-=dx*0.004; _lookE.x-=dy*0.004; const L=Math.PI/2-0.02; _lookE.x=Math.max(-L,Math.min(L,_lookE.x)); camera.quaternion.setFromEuler(_lookE); }
     const modalOpen=()=>{ for(const id of ['overlay','quiz','done']){ const el=document.getElementById(id); if(el && getComputedStyle(el).display!=='none') return true; } return false; };
     const overlay=document.getElementById('overlay');
-    overlay.addEventListener('click',()=>{ if(!IS_TOUCH) controls.lock(); });
+    // Pointer lock is not always granted: inside an iframe without allow="pointer-lock", under
+    // browser/kiosk policy, or during Chrome's ~1s cooldown after an unlock (Esc then click).
+    // Without a fallback the player presses Start and just stays on the overlay, so if the lock
+    // has not engaged shortly after we asked, play on with hold-the-mouse-to-look instead.
+    let dragLook=false, dragging=false;
+    const playing=()=>controls.isLocked||touchActive||dragLook;
+    const enterDragLook=()=>{ if(dragLook||controls.isLocked)return; dragLook=true; overlay.style.display='none'; startAudio();
+      toast('Hold the mouse button to look around 🖱️'); };
+    // Request the lock on the controls' own element rather than via controls.lock(), which drops
+    // the promise Chrome returns and leaves an uncaught rejection in the console when it is denied.
+    const grabMouse=()=>{ if(dragLook)return;
+      try{ const p=controls.domElement.requestPointerLock(); if(p&&p.catch) p.catch(()=>enterDragLook()); }catch(e){ enterDragLook(); }
+      setTimeout(()=>{ if(!controls.isLocked) enterDragLook(); },400); };   // backstop where the call returns nothing
+    const resume=()=>{ if(!dragLook) grabMouse(); };
+    overlay.addEventListener('click',()=>{ if(!IS_TOUCH) grabMouse(); });
     controls.addEventListener('lock',()=>{ overlay.style.display='none'; startAudio(); });
-    controls.addEventListener('unlock',()=>{ if(quizGate||winning||defense||touchActive) return; overlay.style.display='flex'; });
-    const beginGame=(m)=>{ mode=m; readAloud=(m==='younger'); if(IS_TOUCH){ overlay.style.display='none'; startAudio(); touchActive=true; document.getElementById('tctl').classList.add('on'); } else { controls.lock(); } };
+    controls.addEventListener('unlock',()=>{ if(quizGate||winning||defense||touchActive||dragLook) return; overlay.style.display='flex'; });
+    const beginGame=(m)=>{ mode=m; readAloud=(m==='younger'); connectVisitors(); if(IS_TOUCH){ overlay.style.display='none'; startAudio(); touchActive=true; document.getElementById('tctl').classList.add('on'); } else { grabMouse(); } };
     { const my=document.getElementById('m-young'), mo=document.getElementById('m-old'), ma=document.getElementById('m-adult');
       if(my) my.onclick=(e)=>{ e.stopPropagation(); beginGame('younger'); };
       if(mo) mo.onclick=(e)=>{ e.stopPropagation(); beginGame('older'); };
@@ -871,9 +893,17 @@
         try{ if(navigator.share){ await navigator.share(d); } else if(navigator.clipboard){ await navigator.clipboard.writeText(SHARE_URL); toast('Link copied! 🔗'); } else { toast(SHARE_URL); } }catch(err){} }; }
     const move={f:false,b:false,l:false,r:false};
     let tour=false,tourIdx=0,tourWait=0;
-    const set=(e,v)=>{ if(e.target&&e.target.tagName==='INPUT')return; const k=e.code; if(k==='KeyW'||k==='ArrowUp')move.f=v; else if(k==='KeyS'||k==='ArrowDown')move.b=v; else if(k==='KeyA'||k==='ArrowLeft')move.l=v; else if(k==='KeyD'||k==='ArrowRight')move.r=v; else if(k==='KeyM'&&v)toggleMute(); else if(k==='KeyV'&&v)readAloud=!readAloud; else if(k==='KeyT'&&v){ tour=!tour; tourWait=0; } };
+    const set=(e,v)=>{ if(e.target&&e.target.tagName==='INPUT')return; const k=e.code; if(k==='KeyW'||k==='ArrowUp')move.f=v; else if(k==='KeyS'||k==='ArrowDown')move.b=v; else if(k==='KeyA'||k==='ArrowLeft')move.l=v; else if(k==='KeyD'||k==='ArrowRight')move.r=v; else if(k==='KeyM'&&v)toggleMute(); else if(k==='KeyV'&&v)readAloud=!readAloud; else if(k==='KeyT'&&v){ tour=!tour; tourWait=0; }
+      else if(v&&k.startsWith('Digit')){ const i=+k.slice(5)-1; if(i>=0&&i<4) sendEmote(i); } };
     addEventListener('keydown',e=>set(e,true)); addEventListener('keyup',e=>set(e,false));
-    addEventListener('mousedown',()=>{ if(defense && controls.isLocked) blast(); });
+    addEventListener('mousedown',()=>{ if(defense && (controls.isLocked||dragLook) && !modalOpen()) blast(); });
+    // drag-to-look, used only when pointer lock was refused (see grabMouse above)
+    if(!IS_TOUCH){
+      addEventListener('mousedown',(e)=>{ if(dragLook && !modalOpen() && e.button===0) dragging=true; });
+      addEventListener('mousemove',(e)=>{ if(dragging && dragLook && !modalOpen()) applyLook(e.movementX||0, e.movementY||0); });
+      const endDrag=()=>{ dragging=false; };
+      addEventListener('mouseup',endDrag); addEventListener('mouseleave',endDrag); addEventListener('blur',endDrag);
+    }
     addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight); });
     { const sndEl=document.getElementById('snd'); if(sndEl) sndEl.addEventListener('click',(e)=>{ e.stopPropagation(); toggleMute(); }); }
     // ---- touch input: left side = walk (virtual stick), right side = look; tap answers via DOM ----
@@ -906,12 +936,107 @@
     function groundHeight(){ ray.set(new THREE.Vector3(player.position.x,player.position.y+3,player.position.z),down); const hit=ray.intersectObjects(walkable,false); return hit.length?hit[0].point.y:0; }
     function resolveCollision(){ const R=0.6; let px=player.position.x,pz=player.position.z; for(const c of colliders){ if(px>c.x0-R&&px<c.x1+R&&pz>c.z0-R&&pz<c.z1+R){ const dL=px-(c.x0-R),dR=(c.x1+R)-px,dB=pz-(c.z0-R),dF=(c.z1+R)-pz,mn=Math.min(dL,dR,dB,dF); if(mn===dL)px=c.x0-R; else if(mn===dR)px=c.x1+R; else if(mn===dB)pz=c.z0-R; else pz=c.z1+R; } } player.position.x=px; player.position.z=pz; }
 
+    // ============ other visitors (realtime presence) ============
+    // The temple is a meeting place: anyone else on the same server walks the courts with you,
+    // drawn with the same figures as the kohanim but in a blue robe so they read as visitors.
+    // If there is no presence server — opened as a static file, or hosted on GitHub Pages —
+    // this stays silent and the game is exactly the single-player experience it was.
+    const visitors=new Map(); let ws=null, myName='';
+    const hereEl=document.getElementById('here'), emotesEl=document.getElementById('emotes');
+    function nameTag(text){ const c=document.createElement('canvas'); c.width=256; c.height=64; const x=c.getContext('2d');
+      x.font='600 30px ui-sans-serif,system-ui,sans-serif'; x.textAlign='center'; x.textBaseline='middle';
+      const w=Math.min(240,x.measureText(text).width+28);
+      x.fillStyle='rgba(12,10,6,.55)'; x.beginPath(); x.roundRect((256-w)/2,12,w,40,10); x.fill();
+      x.fillStyle='#eab93f'; x.fillText(text,128,33);
+      const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
+      const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false}));
+      s.scale.set(1.7,0.42,1); return s; }
+    // A fixed, numbered greeting set — visitors can acknowledge each other without anyone
+    // being able to type. Keep in step with EMOTE_COUNT in visitors.js.
+    const EMOTES=[{e:'👋',s:'Shalom!'},{e:'🙏',s:'Amen'},{e:'📖',s:'Learning'},{e:'✨',s:'Wow'}];
+    if(emotesEl) EMOTES.forEach((em,i)=>{ const b=document.createElement('button');
+      b.textContent=em.e; b.title=em.s; b.setAttribute('aria-label',em.s);
+      b.onclick=(ev)=>{ ev.stopPropagation(); sendEmote(i); }; emotesEl.appendChild(b); });
+    function bubble(txt){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
+      x.font='84px ui-sans-serif,system-ui,sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(txt,64,72);
+      const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
+      const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false}));
+      s.scale.set(0.9,0.9,1); s.position.y=2.6; return s; }
+    function showEmote(g,i){ const u=g.userData;
+      if(u.bub){ g.remove(u.bub); u.bub.material.map.dispose(); u.bub.material.dispose(); }
+      u.bub=bubble(EMOTES[i]?EMOTES[i].e:'✨'); g.add(u.bub); u.bubUntil=performance.now()+4000; }
+    function addVisitor(p){ const g=person(p.x,p.z,p.y,{robe:ROBE_BL,ry:p.ry});
+      const tag=nameTag(p.name); tag.position.y=2.05; g.add(tag);
+      g.userData={tx:p.x,ty:p.y,tz:p.z,tr:p.ry,tag,name:p.name,emSeq:0}; visitors.set(p.id,g); return g; }
+    function dropVisitor(id){ const g=visitors.get(id); if(!g)return; scene.remove(g);
+      g.traverse(o=>{ if(o.isSprite){ o.material.map.dispose(); o.material.dispose(); } }); visitors.delete(id); }
+    function onState(msg){
+      const seen=new Set();
+      for(const p of msg.ps){ seen.add(p.id);
+        let g=visitors.get(p.id); if(!g){ g=addVisitor(p); continue; }
+        const u=g.userData; u.tx=p.x; u.ty=p.y; u.tz=p.z; u.tr=p.ry;
+        if(p.emSeq && p.emSeq>u.emSeq){ u.emSeq=p.emSeq; showEmote(g,p.em); }
+        if(u.name!==p.name){ g.remove(u.tag); u.tag.material.map.dispose(); u.tag.material.dispose();
+          u.tag=nameTag(p.name); u.tag.position.y=2.05; g.add(u.tag); u.name=p.name; } }
+      for(const id of [...visitors.keys()]) if(!seen.has(id)) dropVisitor(id);
+      const n=msg.here||1; hereEl.textContent = n>1 ? ' · 👥 '+n+' here now' : '';
+      // The greeting row is pointless on your own, so it appears only once someone else is here.
+      if(emotesEl) emotesEl.classList.toggle('on', IS_TOUCH && n>1);
+    }
+    let wantVisitors=false, retry=0, retryTimer=null, everConnected=false;
+    function connectVisitors(){
+      const q=new URLSearchParams(location.search);
+      if(q.get('solo')==='1' || !/^https?:/.test(location.protocol)) return;   // file:// → single-player
+      wantVisitors=true; openSocket(q.get('server'));
+    }
+    function openSocket(override){
+      const url=override || ((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+      try{ ws=new WebSocket(url); }catch(e){ return; }
+      ws.onopen=()=>{ retry=0; everConnected=true; ws.send(JSON.stringify({t:'hello',name:myName})); };
+      ws.onmessage=(e)=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; }
+        if(m.t==='welcome'){ myName=myName||m.name; toast('You are '+myName+' — others here can see you 👥',2600); }
+        else if(m.t==='state') onState(m); };
+      // A dropped server must never end the visit: clear the courts, then keep trying quietly.
+      // Without this a laptop lid, a tunnel or a dyno restart would strand you alone for good.
+      ws.onclose=()=>{ ws=null; for(const id of [...visitors.keys()]) dropVisitor(id); hereEl.textContent='';
+        // Give up quietly if we never got through at all — that is a static host with no
+        // presence server (GitHub Pages), not a blip, and retrying it forever just burns
+        // a failed request every 16s for as long as the tab is open. Once we have connected
+        // successfully, keep retrying indefinitely: that case is a restart worth waiting out.
+        if(!everConnected && retry>=3){ wantVisitors=false; return; }
+        if(wantVisitors && !retryTimer){ const wait=Math.min(16000,1000*Math.pow(2,retry++));
+          retryTimer=setTimeout(()=>{ retryTimer=null; openSocket(override); }, wait); } };
+      ws.onerror=()=>{ try{ ws.close(); }catch(e){} };
+    }
+    // Pose goes out on a timer rather than from the render loop: a backgrounded tab stops
+    // requestAnimationFrame entirely, which used to look exactly like a dead client and got
+    // the visitor reaped. Timers still fire when throttled, so you stay present.
+    let lastEmote=0;
+    function sendEmote(i){
+      if(!ws || ws.readyState!==1 || !EMOTES[i]) return;
+      if(performance.now()-lastEmote<1200) return;      // gentle rate limit, no spamming the court
+      lastEmote=performance.now(); ws.send(JSON.stringify({t:'emote',e:i})); toast(EMOTES[i].e+' '+EMOTES[i].s); }
+    setInterval(()=>{
+      if(!ws || ws.readyState!==1) return;
+      _lookE.setFromQuaternion(camera.quaternion);
+      ws.send(JSON.stringify({t:'pose',x:+player.position.x.toFixed(2),y:+(player.position.y-EYE).toFixed(2),z:+player.position.z.toFixed(2),ry:+_lookE.y.toFixed(2)}));
+    },80);
+    function updateVisitors(dt){
+      // Smooth the 12.5 Hz snapshots into continuous motion.
+      const k=Math.min(1,10*dt);
+      for(const g of visitors.values()){ const u=g.userData;
+        g.position.x+=(u.tx-g.position.x)*k; g.position.y+=(u.ty-g.position.y)*k; g.position.z+=(u.tz-g.position.z)*k;
+        let d=u.tr-g.rotation.y; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2;
+        g.rotation.y+=d*k;
+        if(u.bub && performance.now()>u.bubUntil){ g.remove(u.bub); u.bub.material.map.dispose(); u.bub.material.dispose(); u.bub=null; } }
+    }
+
     // ============ loop ============
     const clock=new THREE.Clock();
     const fogCol=new THREE.Color();
     function animate(){ requestAnimationFrame(animate);
       const dt=Math.min(clock.getDelta(),0.1), now=clock.elapsedTime;
-      if(controls.isLocked || touchActive){
+      if(playing()){
         if(tour){ const s=STATIONS[tourIdx],tx=s.x||0,tz=s.z,dx=tx-player.position.x,dz=tz-player.position.z,dist=Math.hypot(dx,dz);
           if(dist>2.4){ const sp=Math.min(dist,9*dt); player.position.x+=dx/dist*sp; player.position.z+=dz/dist*sp; } else { tourWait+=dt; if(tourWait>5){ tourWait=0; tourIdx=(tourIdx+1)%STATIONS.length; } } }
         else if(!quizGate && !winning){ const v=15*dt; if(move.f)controls.moveForward(v); if(move.b)controls.moveForward(-v); if(move.r)controls.moveRight(v); if(move.l)controls.moveRight(-v);
@@ -920,6 +1045,7 @@
         player.position.y += (groundHeight()+EYE - player.position.y)*Math.min(1,12*dt); checkStations();
           if(move.f||move.b||move.l||move.r||(touchActive&&(touchMove.x||touchMove.y))){ stepT+=dt; if(stepT>0.42){ stepT=0; footstep(); } }
           for(const c of coins){ if(!c.got){ const cx=player.position.x-c.m.position.x, cz=player.position.z-c.m.position.z; if(cx*cx+cz*cz<4){ c.got=true; c.m.visible=false; c.halo.visible=false; coinCount++; updateCoins(); chime(true); } } } }
+      updateVisitors(dt);   // outside the playing() gate, so visitors keep moving during a quiz
       fire.intensity=2.8+Math.sin(now*9)*0.5+Math.sin(now*23)*0.25;
       shechina.intensity=2.1+Math.sin(now*1.3)*0.4;
       for(const p of smoke){ p.userData.t+=dt; const t=p.userData.t%5; p.position.set(Math.sin(t*1.4+p.userData.r*6)*0.9,ay+2+t*3.3,AZ+Math.cos(t+p.userData.r*6)*0.6); p.scale.setScalar(1+t*0.75); p.material.opacity=Math.max(0,0.5*(1-t/5)); }
