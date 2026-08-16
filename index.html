@@ -111,8 +111,6 @@
       <div>🚪 Answer the question at each <b>glowing gate</b> to open it</div>
       <div>🪙 Collect the <b>golden coins</b> as you explore</div>
       <div>👑 Reach the <b>Holy of Holies</b> to win!</div>
-      <div class="desk">👥 Others here walk with you — greet them with <b>1 2 3 4</b></div>
-      <div class="mob">👥 Others here walk with you — greet them with the <b>side buttons</b></div>
     </div>
     <div class="modes">
       <button class="modebtn" id="m-young">🧒 Ages 3–6<span>read aloud · tap the answer</span></button>
@@ -941,7 +939,7 @@
     // drawn with the same figures as the kohanim but in a blue robe so they read as visitors.
     // If there is no presence server — opened as a static file, or hosted on GitHub Pages —
     // this stays silent and the game is exactly the single-player experience it was.
-    const visitors=new Map(); let ws=null, myName='';
+    const visitors=new Map(); let ws=null, myName='', taughtGreetings=false;
     const hereEl=document.getElementById('here'), emotesEl=document.getElementById('emotes');
     function nameTag(text){ const c=document.createElement('canvas'); c.width=256; c.height=64; const x=c.getContext('2d');
       x.font='600 30px ui-sans-serif,system-ui,sans-serif'; x.textAlign='center'; x.textBaseline='middle';
@@ -982,6 +980,11 @@
       const n=msg.here||1; hereEl.textContent = n>1 ? ' · 👥 '+n+' here now' : '';
       // The greeting row is pointless on your own, so it appears only once someone else is here.
       if(emotesEl) emotesEl.classList.toggle('on', IS_TOUCH && n>1);
+      // Teach the greetings the moment they first become usable, rather than on the start
+      // screen — served without a presence server nobody ever arrives, and a tip about
+      // greeting people who cannot exist is just a puzzle.
+      if(n>1 && !taughtGreetings){ taughtGreetings=true;
+        toast(IS_TOUCH ? 'Someone else is here — tap 👋 to greet them' : 'Someone else is here — press 1 2 3 4 to greet them', 3600); }
     }
     let wantVisitors=false, retry=0, retryTimer=null, everConnected=false;
     function connectVisitors(){
