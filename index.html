@@ -464,50 +464,62 @@
     // The body is a single turned profile rather than a stack of cylinders: a robe flares at
     // the hem, draws in at the waist and fills again across the chest, and it is that curve
     // that stops a standing figure reading as a capsule.
+    // A bow bends a person at the waist, so the robe is turned as two pieces meeting there and
+    // everything above the waist is authored relative to it — the upper half then hinges as a
+    // unit while the hem stays planted. Both profiles share the radius at the seam so it closes.
+    const WAIST=0.430;
     const FIG=(()=>{
       const V=(r,y)=>new THREE.Vector2(r,y);
-      const robe=new THREE.LatheGeometry([
+      const U=(r,y)=>new THREE.Vector2(r,y-WAIST);      // upper pieces sit relative to the hinge
+      const robeLower=new THREE.LatheGeometry([
         V(0.170,0.000),V(0.166,0.060),V(0.156,0.150),V(0.143,0.270),V(0.131,0.400),
-        V(0.128,0.455),V(0.134,0.530),V(0.139,0.620),V(0.134,0.700),V(0.118,0.760),
-        V(0.090,0.800),V(0.055,0.820)],20);
+        V(0.1295,WAIST)],20);
+      const robeUpper=new THREE.LatheGeometry([
+        U(0.1295,WAIST),U(0.128,0.455),U(0.134,0.530),U(0.139,0.620),U(0.134,0.700),
+        U(0.118,0.760),U(0.090,0.800),U(0.055,0.820)],20);
       // Shoulders are wider across than deep, which a turned profile cannot express.
-      const shoulder=new THREE.SphereGeometry(0.135,16,10); shoulder.scale(1.15,0.60,0.88); shoulder.translate(0,0.782,0);
-      const sash=new THREE.CylinderGeometry(0.134,0.134,0.040,18); sash.translate(0,0.497,0);
+      const shoulder=new THREE.SphereGeometry(0.135,16,10); shoulder.scale(1.15,0.60,0.88); shoulder.translate(0,0.782-WAIST,0);
+      const sash=new THREE.CylinderGeometry(0.134,0.134,0.040,18); sash.translate(0,0.497-WAIST,0);
       const arm=new THREE.CylinderGeometry(0.040,0.033,0.40,8);
       const hand=new THREE.SphereGeometry(0.031,8,7);
-      const neck=new THREE.CylinderGeometry(0.037,0.045,0.055,8); neck.translate(0,0.838,0);
-      const head=new THREE.SphereGeometry(0.076,18,14); head.scale(0.93,1.07,0.96); head.translate(0,0.902,0);
-      const hair=new THREE.SphereGeometry(0.081,18,10,0,Math.PI*2,0,Math.PI*0.60); hair.translate(0,0.918,0);
-      const turban=new THREE.SphereGeometry(0.088,18,10,0,Math.PI*2,0,Math.PI*0.56); turban.translate(0,0.928,0);
+      const neck=new THREE.CylinderGeometry(0.037,0.045,0.055,8); neck.translate(0,0.838-WAIST,0);
+      const head=new THREE.SphereGeometry(0.076,18,14); head.scale(0.93,1.07,0.96); head.translate(0,0.902-WAIST,0);
+      const hair=new THREE.SphereGeometry(0.081,18,10,0,Math.PI*2,0,Math.PI*0.60); hair.translate(0,0.918-WAIST,0);
+      const turban=new THREE.SphereGeometry(0.088,18,10,0,Math.PI*2,0,Math.PI*0.56); turban.translate(0,0.928-WAIST,0);
       const beard=new THREE.ConeGeometry(0.056,0.125,10); beard.rotateX(Math.PI);   // apex down, off the chin
       const peyos=new THREE.CylinderGeometry(0.015,0.009,0.105,6);
       // A shawl turned through part of a revolution: wrapped round the back and shoulders,
       // open across the front. Lathe theta starts at +z, which is the way a figure faces.
       const tallis=new THREE.LatheGeometry([
-        V(0.150,0.500),V(0.158,0.590),V(0.157,0.680),V(0.144,0.745),V(0.118,0.792),V(0.088,0.812)],
+        U(0.150,0.500),U(0.158,0.590),U(0.157,0.680),U(0.144,0.745),U(0.118,0.792),U(0.088,0.812)],
         16,Math.PI*0.40,Math.PI*1.20);
-      return {robe,shoulder,sash,arm,hand,neck,head,hair,turban,beard,peyos,tallis};
+      return {robeLower,robeUpper,shoulder,sash,arm,hand,neck,head,hair,turban,beard,peyos,tallis};
     })();
 
     function person(x,z,y,opts={}){ const g=new THREE.Group(); const rnv=((Math.sin(x*12.9+z*78.23)*43758.5)%1+1)%1; const h=(opts.h||1.8)*(0.94+rnv*0.12); const rm=opts.robe||ROBE_W;
       // The scaled body hangs inside an unscaled group, so anything attached from outside —
       // an instrument, a visitor's name tag — stays in world units.
       const b=new THREE.Group(); b.scale.setScalar(h); g.add(b);
-      b.add(new THREE.Mesh(FIG.robe,rm));
-      b.add(new THREE.Mesh(FIG.shoulder,rm));
-      if(opts.tallis) b.add(new THREE.Mesh(FIG.tallis,TALLIS));
-      if(opts.sash!==false) b.add(new THREE.Mesh(FIG.sash,opts.sash||SASH));
+      b.add(new THREE.Mesh(FIG.robeLower,rm));
+      // Everything from the waist up hangs off a hinge, so a bow folds the body forward
+      // instead of tipping the whole person over at the feet.
+      const up=new THREE.Group(); up.position.y=WAIST; b.add(up);
+      up.add(new THREE.Mesh(FIG.robeUpper,rm));
+      up.add(new THREE.Mesh(FIG.shoulder,rm));
+      if(opts.tallis) up.add(new THREE.Mesh(FIG.tallis,TALLIS));
+      if(opts.sash!==false) up.add(new THREE.Mesh(FIG.sash,opts.sash||SASH));
       for(const sx of [-1,1]){
-        const a=new THREE.Mesh(FIG.arm,rm); a.position.set(sx*0.143,0.585,0); a.rotation.z=sx*0.075; b.add(a);
-        const hd=new THREE.Mesh(FIG.hand,SKIN); hd.position.set(sx*0.156,0.378,0.006); b.add(hd); }
-      b.add(new THREE.Mesh(FIG.neck,SKIN));
-      b.add(new THREE.Mesh(FIG.head,SKIN));
-      const bd=new THREE.Mesh(FIG.beard,HAIR); bd.position.set(0,0.878,0.030); bd.rotation.x=0.26; b.add(bd);
-      if(opts.turban){ b.add(new THREE.Mesh(FIG.turban,opts.turban)); }
-      else { b.add(new THREE.Mesh(FIG.hair,HAIR));
-        for(const sx of [-1,1]){ const p=new THREE.Mesh(FIG.peyos,HAIR); p.position.set(sx*0.072,0.877,0.014); p.rotation.z=sx*0.13; b.add(p); } }
+        const a=new THREE.Mesh(FIG.arm,rm); a.position.set(sx*0.143,0.585-WAIST,0); a.rotation.z=sx*0.075; up.add(a);
+        const hd=new THREE.Mesh(FIG.hand,SKIN); hd.position.set(sx*0.156,0.378-WAIST,0.006); up.add(hd); }
+      up.add(new THREE.Mesh(FIG.neck,SKIN));
+      up.add(new THREE.Mesh(FIG.head,SKIN));
+      const bd=new THREE.Mesh(FIG.beard,HAIR); bd.position.set(0,0.878-WAIST,0.030); bd.rotation.x=0.26; up.add(bd);
+      if(opts.turban){ up.add(new THREE.Mesh(FIG.turban,opts.turban)); }
+      else { up.add(new THREE.Mesh(FIG.hair,HAIR));
+        for(const sx of [-1,1]){ const p=new THREE.Mesh(FIG.peyos,HAIR); p.position.set(sx*0.072,0.877-WAIST,0.014); p.rotation.z=sx*0.13; up.add(p); } }
+      if(opts.bow) up.rotation.x=opts.bow;
       if(opts.hold){ opts.hold.position.set(0,h*0.5,0.34); g.add(opts.hold); }
-      g.position.set(x,y,z); if(opts.ry!=null) g.rotation.y=opts.ry+(rnv-0.5)*0.18; if(opts.bow) g.rotation.x=opts.bow;
+      g.position.set(x,y,z); if(opts.ry!=null) g.rotation.y=opts.ry+(rnv-0.5)*0.18;
       g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); scene.add(g); return g; }
     function harp(){ const g=new THREE.Group(); const arc=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.05,8,18,Math.PI*1.1),WOOD); arc.rotation.z=-0.6; arc.position.y=0.3; g.add(arc);
       const post=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.7,8),WOOD); post.position.set(-0.18,0.3,0); g.add(post);
